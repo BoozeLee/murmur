@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+ * One dark surface, tuned for looking at for an hour while painting. Colours are
+ * deliberately desaturated so the palette names on a card are the loudest thing
+ * on the page.
+ */
+@theme {
+  --color-ink-900: #0b0a10;
+  --color-ink-800: #12111a;
+  --color-ink-700: #1b1926;
+  --color-ink-600: #262335;
+  --color-ink-500: #3a3550;
+  --color-mist-400: #8d86a8;
+  --color-mist-200: #cfc8de;
+  --color-phosphor: #8fd8c8;
+  --color-ember: #d8a87f;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+html,
+body {
+  background-color: var(--color-ink-900);
+  color: var(--color-mist-200);
+}
+
+body {
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A very slow drift so a full-screen deck does not feel like a dead page. */
+@keyframes murmur-drift {
+  0% {
+    opacity: 0.35;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate3d(0, -1.5%, 0) scale(1.04);
+  }
+  100% {
+    opacity: 0.35;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.murmur-glow {
+  animation: murmur-drift 24s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .murmur-glow {
+    animation: none;
+  }
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-phosphor) 30%, transparent);
+}
