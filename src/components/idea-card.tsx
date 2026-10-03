@@ -124,7 +124,10 @@ export function IdeaCard({
           Not this one
         </button>
         <span className="ml-auto text-[0.7rem] text-mist-400/60">
-          {idea.source === "ollama" ? idea.model ?? "ollama" : "curated"}
+          {/* Keyed on `provider`, not `source`: `source` says which pool a card
+              belongs to, and llama.cpp cards live in the corpus pool, so a
+              `source` check would label a card the MoE just wrote as "curated". */}
+          {idea.provider ? (idea.model ?? idea.provider) : "curated"}
           {idea.latencyMs ? ` · ${(idea.latencyMs / 1000).toFixed(1)}s` : ""}
           {idea.fallbackUsed ? " · fell back" : ""}
         </span>

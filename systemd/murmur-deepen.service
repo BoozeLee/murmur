@@ -1,0 +1,21 @@
+[Unit]
+Description=Murmur - write a few more curated cards with the big MoE model
+Documentation=https://github.com/BoozeLee/murmur
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/USER/murmur
+Environment=HOME=/home/USER
+EnvironmentFile=-%h/murmur/.env.local
+Environment=PATH=/home/USER/.bun/bin:/home/USER/.local/bin:/usr/local/bin:/usr/bin
+
+# The script owns the model server's whole life: it starts llama-server, waits for
+# the weights, writes the cards, and stops the server again. Restarting it from
+# here would leave a 7GB model on the card and make the deck crawl, so if it fails
+# the failure is reported instead of retried.
+ExecStart=/home/USER/murmur/scripts/deepen-night.sh
+TimeoutStartSec=14400
+NoNewPrivileges=true
+PrivateTmp=true

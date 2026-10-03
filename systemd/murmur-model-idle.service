@@ -1,0 +1,13 @@
+[Unit]
+# Stops the model server once nobody has drawn for a while.
+#
+# Started and rearmed by every draw (src/lib/model-server.ts), never at boot.
+# The model holds nearly the whole graphics card; leaving it up forever would
+# quietly break open-webui and anything else that wants the GPU.
+Description=Idle timer: shut Murmur's model server down when it is no longer being used
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --user stop murmur-model.service
+TimeoutStartSec=60
+NoNewPrivileges=true

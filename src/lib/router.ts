@@ -47,23 +47,23 @@ export interface RoutingPolicy {
 export const POLICIES: Record<TaskClass, RoutingPolicy> = {
   "deck.draw": {
     taskClass: "deck.draw",
-    preferred: "ollama",
+    preferred: "llamacpp",
     corpusFallback: true,
     cloudFallback: false,
     maxCostEur: 0,
     maxCount: 4,
     requiredOutput: "structured",
-    why: "The whole point of the app. Local model first so nothing leaves the machine; the corpus answers when the GPU is busy or the model fails validation.",
+    why: "The whole point of the app, so it gets the model whose prose is actually worth reading — the 30B MoE, locally, with nothing leaving the machine. The price is minutes instead of seconds, which is why the curated draw is the default button and the model is opt-in. The corpus answers if the model server will not come up, so a draw never dead-ends.",
   },
   "deck.expand": {
     taskClass: "deck.expand",
-    preferred: "ollama",
+    preferred: "llamacpp",
     corpusFallback: true,
     cloudFallback: false,
     maxCostEur: 0,
     maxCount: 1,
     requiredOutput: "structured",
-    why: "Same privacy class as a draw. Falls back to a deterministic fusion of the idea with a corpus partner, which is a real idea rather than an apology.",
+    why: "Same privacy class and same model as a draw. Falls back to a deterministic fusion of the idea with a corpus partner, which is a real idea rather than an apology.",
   },
   "corpus.deepen": {
     taskClass: "corpus.deepen",
@@ -75,7 +75,7 @@ export const POLICIES: Record<TaskClass, RoutingPolicy> = {
     maxCostEur: 0,
     maxCount: 1,
     requiredOutput: "structured",
-    why: "Overnight batch work, so the slow 30B MoE is affordable here and nowhere else. Its prose is stronger than the deck model's, and the cards are validated and written to the corpus rather than shown live.",
+    why: "Same model as a draw, but unattended: this is the one place a card can be afforded without anyone waiting, and the cards are validated and written to the corpus so later draws are instant. No fallback here — a deepening run that silently answered from the existing corpus would deepen nothing while reporting success.",
   },
 };
 
@@ -101,12 +101,12 @@ function activeProvider(name: ProviderName): IdeaProvider {
 }
 
 /**
- * Test seam: pin a provider name to an instance. Passing null clears every memo,
- * so the next call rebuilds from the policy table.
+ * Test seam: pin a provider name to an instance, or pass null to unpin it. The
+ * next call rebuilds from the policy table.
  */
-export function setProvider(next: IdeaProvider | null): void {
-  providers.clear();
-  if (next !== null) providers.set("ollama", next);
+export function setProvider(name: ProviderName, next: IdeaProvider | null): void {
+  if (next === null) providers.delete(name);
+  else providers.set(name, next);
 }
 
 function requestId(): string {

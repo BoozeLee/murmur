@@ -1,0 +1,13 @@
+[Unit]
+Description=Murmur - deepen the corpus overnight
+
+[Timer]
+# 04:23 in the morning: the card is free, and nobody is waiting on a painting
+# idea at four in the morning. The job holds most of the GPU for a couple of
+# hours, so it is deliberately far away from the hours the deck is used.
+OnCalendar=*-*-* 04:23:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

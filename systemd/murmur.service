@@ -1,0 +1,24 @@
+[Unit]
+Description=Murmur - painting idea deck (local model, no network calls)
+Documentation=file:///home/USER/murmur/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/USER/murmur
+Environment=HOME=/home/USER
+Environment=NODE_ENV=production
+Environment=PATH=/home/USER/.bun/bin:/home/USER/.local/bin:/usr/local/bin:/usr/bin
+# next start needs a production build; build one only if it is missing.
+ExecStartPre=/bin/sh -c 'test -d /home/USER/murmur/.next || /home/USER/.bun/bin/bun run build'
+ExecStart=/home/USER/.bun/bin/bun run start -p 3000
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

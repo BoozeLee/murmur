@@ -80,20 +80,3 @@ export function correctionPrompt(reason: string): string {
   ].join("\n");
 }
 
-/** Shown on the card as the provenance line, so the deck is self-explaining. */
-export function provenanceLine(input: {
-  source: string;
-  model?: string | undefined;
-  latencyMs?: number | undefined;
-  fallbackUsed?: boolean | undefined;
-}): string {
-  const parts: string[] = [];
-  if (input.source === "corpus") {
-    parts.push("curated");
-  } else {
-    parts.push(input.model ?? "local model");
-    if (input.fallbackUsed === true) parts.push("after fallback");
-  }
-  if (input.latencyMs !== undefined) parts.push(`${(input.latencyMs / 1000).toFixed(1)}s`);
-  return parts.join(" · ");
-}

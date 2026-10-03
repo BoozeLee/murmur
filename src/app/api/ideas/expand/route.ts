@@ -1,4 +1,5 @@
 import { assertSameOrigin, errorResponse, json, readJson } from "@/lib/http";
+import { ensureModelForRequest } from "@/lib/model-server";
 import { expandIdea, RequestError } from "@/lib/router";
 import { IdeaDraftSchema } from "@/lib/schema";
 import { getStore } from "@/lib/store";
@@ -24,9 +25,12 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
+    // An expansion always asks the model, so the server is booted here too —
+    // there is no curated-only shortcut on this route to skip it.
+    const modelServer = await ensureModelForRequest(body);
     const result = await expandIdea(parsed.data);
     await getStore().markSeen(result.ideas.map((idea) => idea.title));
-    return json(result);
+    return json({ ...result, modelServer });
   } catch (error) {
     return errorResponse(error);
   }

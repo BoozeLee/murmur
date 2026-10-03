@@ -1,4 +1,5 @@
 import { allIdeas, appendDeepened, generatedCount } from "../src/lib/corpus/deepened";
+import { armIdleTimer } from "../src/lib/model-server";
 import { CATEGORIES } from "../src/lib/schema";
 import { run } from "../src/lib/router";
 import { defaultLlamacppOptions } from "../src/lib/providers/llamacpp";
@@ -6,16 +7,19 @@ import { defaultLlamacppOptions } from "../src/lib/providers/llamacpp";
 /**
  * The overnight deepening run.
  *
- * Ask the 30B MoE for cards it can write better than the deck's 8B model, hold
- * every one of them to the same contract, and add the survivors to the corpus.
- * Each card is appended the moment it validates, so an interrupted night keeps
- * whatever it had already earned.
+ * Ask the 30B MoE for cards, hold every one of them to the same contract, and add
+ * the survivors to the corpus. Each card is appended the moment it validates, so
+ * an interrupted night keeps whatever it had already earned.
  *
  * Run it directly for a manual deepening:
  *   bun --env-file=.env.local run scripts/deepen-corpus.ts --count 6
  *
  * The systemd timer runs the wrapper script instead, because the model server has
  * to be started and stopped around this and nothing here should be doing that.
+ *
+ * The idle timer is rearmed after every card. Without that, a card that takes
+ * minutes would let the shutdown timer fire in the middle of a run and kill the
+ * server halfway through writing the corpus.
  */
 
 function flag(name: string, fallback: string): string {
@@ -59,6 +63,9 @@ for (let index = 0; index < count; index += 1) {
       ...append.overLimit.map((title) => ({ title, reason: "corpus is at its limit" })),
     );
     consecutiveFailures = 0;
+    // A card here costs minutes, so the shutdown timer has to keep moving forward
+    // or it will stop the server between two cards.
+    await armIdleTimer();
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     rejected.push({ reason });

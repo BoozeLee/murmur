@@ -16,33 +16,60 @@ was built and then cut, because nothing about a daily nudge was asked for.
 
 | Path | What it is | Speed |
 |---|---|---|
-| Curated | 53 hand-written seeds, organised around six subjects — architecture, design, engineering, development, intelligence, mechanics — wearing her finish: psychedelic, mystic, ethereal, mysterious, astronomic, esoteric | instant (~100ms) |
-| Model | `qwen3:8b` on this machine, writing a fresh card through a JSON Schema it cannot escape | ~11-20s |
+| Curated | 58 seeds — 53 hand-written, plus whatever the overnight deepener has added — organised around six subjects: architecture, design, engineering, development, intelligence, mechanics, wearing her finish: psychedelic, mystic, ethereal, mysterious, astronomic, esoteric | instant (~100ms) |
+| Model | a **30B mixture-of-experts** on this machine, writing a fresh card through a JSON Schema it cannot escape | ~40-65s |
 | Fused | a kept card crossed with a curated one, when the model is unavailable | instant |
 
 The model never gets the last word. Its answer is parsed against the same schema
-the UI is built from, checked for three failure modes JSON Schema cannot express,
-and repaired once if it fails. If it still fails, the curated corpus answers and
-the card says so.
+the UI is built from, checked for the five failure modes JSON Schema cannot
+express, and repaired once if it fails. If it still fails, the curated corpus
+answers and the card says so.
 
-## The overnight deepener
+## The model
 
-Two models, two jobs, because they are good at opposite things.
+One model, two jobs.
 
-`qwen3:8b` fits in the card and answers in ten seconds, so it serves the deck.
-The deck also gets cards from a second model: a **30B mixture-of-experts**,
-`GLM-4.7-Flash`, distilled from Claude Opus 4.5's own high-reasoning output
+The deck draws from a **30B mixture-of-experts**, `GLM-4.7-Flash`, distilled from
+Claude Opus 4.5's own high-reasoning output
 (`TeichAI/GLM-4.7-Flash-Claude-Opus-4.5-High-Reasoning-Distill-GGUF`). Read
 straight out of the GGUF header, it is a real MoE: 64 experts, 4 routed per token,
 1 shared expert, ~2.6B active of ~30B.
 
-It cannot answer interactively — its weights are larger than the GTX 1080's 8 GB,
-so part of the expert routing lands on the CPU and generation crawls. So it never
-touches a draw. It runs at 04:23, writes a handful of cards through the same
-schema and the same quality rules as everything else, and drops them into
-`.data/corpus/deepened.json`. From then on they are curated cards: instant, and
-mixed in with the hand-written ones by the ordinary draw. The hand-written seeds
-are never touched.
+It runs on the Vulkan build of llama.cpp as a systemd user service,
+`murmur-model.service`, and the deck starts it on demand: the first model draw of
+a session waits ~10s while the weights load, and every later draw finds it warm.
+When the deck goes quiet for twenty minutes `murmur-model-idle.timer` stops the
+server again, because a resident model holds nearly the whole graphics card.
+
+Because the MoE takes the card, `murmur-model.service` stops `open-webui.service`
+on the way up and starts it again on the way down. That unit carries
+`OLLAMA_KEEP_ALIVE=24h`, so it re-loads `llama3.2:3b` within a minute of any
+unload, and the MoE then dies with `cudaMalloc out of memory` on the contiguous
+buffer it cannot get without. Asking Ollama to release the card twice is not
+enough; the other tenant has to go.
+
+### Why Vulkan, and why no `--n-gpu-layers`
+
+nvcc 12.5 on this box cannot parse the GCC headers installed here, so no CUDA
+build of llama.cpp will compile — two different failures, both in `cudafe++`.
+Vulkan through the NVIDIA ICD works and reports the same card. `--n-gpu-layers`
+is deliberately **omitted**: asking for all 47 layers fails with `cudaMalloc out
+of memory`, and letting llama.cpp fit what it can is what fills the card.
+
+**How much actually lands on the GPU**, measured from the VRAM delta rather than
+assumed: the quant in use is `iq2_m`, 9.44 GiB of weights, and the server takes
+6,199 MiB of VRAM, of which ~211 MiB is context and ~123 MiB is scratch. That
+leaves **≈5,865 MiB of weights on the card — about 62%**. The larger `iq3_xs` and
+`iq4_xs` quants only reached ~50%, and `iq2_m` is also **~10x faster**: llama.cpp's
+own timings report **9.7 tok/s** generating and 47 tok/s on the prompt, against
+0.91-1.2 tok/s for `iq3_xs`. That difference is the whole reason a card is a
+~40-65 second wait here instead of five minutes.
+
+The same model also works unattended. `scripts/deepen-night.sh` runs it at 04:23
+to write extra curated cards through the same schema and the same quality rules,
+and drops them into `.data/corpus/deepened.json`. From then on they are curated
+cards: instant, and mixed in with the hand-written ones by the ordinary draw. The
+hand-written seeds are never touched.
 
 ```bash
 ./scripts/deepen-night.sh 3          # three cards, start to finish
@@ -65,33 +92,21 @@ The first card it actually produced, unedited, is in `.data/corpus/deepened.json
 > light at 45° making the surface look like it's fracturing under weight, then coat
 > everything.
 
+The script does not start or stop the server itself — the unit does, and there is
+exactly one way to start the model on this box. The script only notices whether
+it was already up, so a deepen run at 04:23 will not switch the model off under a
+deck that is using it. It leaves the server running if it found it running, and
+stops it if it was the one that woke it.
+
 It is more numerically specific than the hand-written seeds — six inches of cant, 3°
 of rotation, 45° of light, and a medium you could buy. It is also flatter, and reads
 like a specification rather than like the seeds. That is the honest trade: the Opus
 distillation gives it vocabulary and confidence the 8B lacks, not an artist's hand.
-
-The script owns the model server's whole life — start, load, deepen, stop — because
-a `llama-server` left running holds the card and the deck measurably crawls
-(10s → 27s per draw, measured). Before it starts it stops `open-webui.service` and
-restarts it afterwards, then asks Ollama to release whatever it holds, twice: that
-unit carries `OLLAMA_KEEP_ALIVE=24h`, so it re-loads `llama3.2:3b` within a minute
-of any unload and the MoE then dies with `cudaMalloc out of memory` on a 5.8 GB
-contiguous model buffer it cannot get.
-
-It runs through llama.cpp's Vulkan backend, not CUDA: nvcc 12.5 on this box cannot
-parse GCC 16 headers, so no CUDA build of llama.cpp will compile here. `--n-gpu-layers`
-is deliberately **omitted** — asking for all 48 layers fails with
-`cudaMalloc out of memory`, and letting llama.cpp fit what it can is what fills the
-card.
-
-**How much actually lands on the GPU**, measured from the VRAM delta rather than
-assumed: the quant in use is `iq3_xs`, 11.77 GiB of weights, and the server takes
-6,298 MiB of VRAM, of which ~211 MiB is context and ~123 MiB is scratch. That leaves
-**≈5,950 MiB of weights on the card — about 50%**. Half is the ceiling here, not a
-tuning failure: an 11.77 GiB model cannot be "mostly resident" on an 8 GiB card.
-The next quant down (`iq2_m`, 9.44 GiB) would reach ~69%. Generation runs at
-**~1.2 tok/s**, so one card is 332 tokens and takes **4m40s** — six cards is about
-half an hour, which is why this is a 04:23 job and not a feature.
+It also occasionally degenerates — one measured draw came back with the palette
+`pigment A, pigment B, pigment C, pigment D` and an easel line looping the same five
+words five times, and still reported itself complete. That is what the deterministic
+quality rules and the corpus fallback exist for; a placeholder palette and a stuck
+loop are now both rejections.
 
 The cost of a night is disk and heat, not money: nothing leaves the machine, and
 `MURMUR_DEEPEN_COUNT` (default 6) caps it.
@@ -114,7 +129,7 @@ Checks:
 
 ```bash
 bun run typecheck
-bun run test           # 87 vitest tests
+bun run test           # 111 vitest tests
 ```
 
 ## How it is put together
@@ -124,7 +139,7 @@ requirement and then deliberately cut down. What survived:
 
 - **A closed vocabulary.** Six categories, 65 tags, no free text in either. A
   painter handed "mystical" instead of "esoteric" gets two different paintings,
-  and an 8B model will invent synonyms for her taste every run.
+  and a local model will invent synonyms for her taste every run.
 - **One contract.** `src/lib/schema.ts` is the only definition of an idea. The
   Ollama JSON Schema is derived from it with `z.toJSONSchema`, so the model is
   constrained by exactly what the app validates.
@@ -159,13 +174,26 @@ src/lib/engine.ts        seeded draw, filter, fuse — pure, no I/O
 src/lib/quality.ts       deterministic rules a schema cannot state
 src/lib/prompts.ts       versioned prompt text
 src/lib/providers/       types.ts · corpus.ts · ollama.ts · llamacpp.ts · parse.ts
+src/lib/model-server.ts  starts the model on demand, arms the idle timer
 src/lib/router.ts        routing policy + fallback, in code
 src/lib/store.ts         file-backed saves / dismissals / seen
 src/app/api/             ideas · ideas/expand · saved · dismissed
 src/components/          deck · idea-card · filter-bar
 scripts/deepen-corpus.ts the deepening run
-scripts/deepen-night.sh  the deepening run, with the model server's life
+scripts/deepen-night.sh  the deepening run, reusing the running model server
+scripts/ensure-model.ts  start the model server and wait for it
+scripts/release-vram.sh  ask Ollama to let go of the card
 ```
+
+`systemd/` holds the four user units, versioned here and installed to
+`~/.config/systemd/user/`. Only one of them is enabled at boot:
+
+- `murmur.service` — the deck, on :3000.
+- `murmur-model.service` — the model server. Started on demand, never enabled:
+  it must not come up by itself and take the card.
+- `murmur-model-idle.timer` — stops the model server twenty minutes after the last
+  draw. Every draw restarts it.
+- `murmur-deepen.timer` — 04:23, writes extra curated cards.
 
 State lives in `.data/` (gitignored): `saved.json`, `dismissed.json`,
 `seen.json` and `corpus/deepened.json`. Writes are temp-file-then-rename, so an
@@ -178,5 +206,6 @@ running deepener never corrupts what the deck is reading.
   POST to this one with the browser's ambient cookies.
 - Every card is re-validated on the way in, so the shelf can only ever hold
   cards that satisfy the contract.
-- Ollama is called from server code only. Nothing privileged is in the browser
-  bundle.
+- The models are called from server code only — Ollama and llama-server both.
+  Nothing privileged is in the browser bundle, and the model server binds to
+  loopback.

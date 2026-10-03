@@ -48,6 +48,40 @@ describe("qualityIssues", () => {
     expect(issues[0]).toContain("stock phrase");
   });
 
+  it("rejects a palette of placeholders", () => {
+    const issues = qualityIssues(
+      draft({ palette: ["pigment A", "pigment B", "pigment C", "pigment D"] }),
+    );
+    expect(issues).toHaveLength(4);
+    expect(issues[0]).toBe('palette: "pigment A" is a placeholder, not a pigment');
+  });
+
+  it("does not mistake a real pigment for a placeholder", () => {
+    // The negative control: "pigment" alone would catch burnt sienna and ultramarine.
+    const issues = qualityIssues(
+      draft({ palette: ["burnt sienna", "ultramarine", "payne's grey", "raw umber"] }),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it("rejects a field that loops the same clause", () => {
+    const clause = "materials that were already in the surface";
+    const issues = qualityIssues(
+      draft({ prompt: `${clause} and ${clause} so the painter sees ${clause} in the light.` }),
+    );
+    expect(issues.some((i) => i.startsWith("prompt:") && i.includes("repeat three times"))).toBe(true);
+  });
+
+  it("leaves a field that merely repeats itself twice", () => {
+    const issues = qualityIssues(
+      draft({
+        composition:
+          "brass against glass, brass against glass once more, and then a third plane of cast iron",
+      }),
+    );
+    expect(issues.some((i) => i.startsWith("composition:"))).toBe(false);
+  });
+
   it("passes every idea in the curated corpus", () => {
     const offenders = SEED_IDEAS.filter((idea) => qualityIssues(idea).length > 0).map((i) => i.title);
     expect(offenders).toEqual([]);

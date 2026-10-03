@@ -13,6 +13,7 @@ interface DrawResponse {
   ideas: Idea[];
   fallback: { from: string; reason: string } | null;
   telemetry: { provider: string; model: string | null; latencyMs: number; fallbackUsed: boolean };
+  modelServer?: { started: boolean; waitedMs: number } | null;
 }
 
 const EMPTY_FILTER: DeckFilter = { tags: [] };
@@ -53,31 +54,37 @@ export function Deck({
     return () => clearInterval(timer);
   }, [status]);
 
-  const draw = useCallback(async () => {
-    setStatus("drawing");
-    setError(null);
-    setNote(null);
-    try {
-      const response = await fetch("/api/ideas", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          category: filter.category,
-          tags: filter.tags.length > 0 ? filter.tags : undefined,
-          curatedOnly,
-        }),
-      });
-      const payload = (await response.json()) as DrawResponse & { error?: string };
-      if (!response.ok) throw new Error(payload.error ?? `request failed (${response.status})`);
-      setDeck(payload.ideas);
-      setNote(describe(payload));
-      setStats((current) => ({ ...current, seen: current.seen + payload.ideas.length }));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setStatus("idle");
-    }
-  }, [curatedOnly, filter]);
+  // `from` overrides the toggle for one call, so a button can say which source it
+  // wants without waiting for a state change to land before the fetch is built.
+  const draw = useCallback(
+    async (from?: boolean) => {
+      const curated = from ?? curatedOnly;
+      setStatus("drawing");
+      setError(null);
+      setNote(null);
+      try {
+        const response = await fetch("/api/ideas", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            category: filter.category,
+            tags: filter.tags.length > 0 ? filter.tags : undefined,
+            curatedOnly: curated,
+          }),
+        });
+        const payload = (await response.json()) as DrawResponse & { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? `request failed (${response.status})`);
+        setDeck(payload.ideas);
+        setNote(describe(payload));
+        setStats((current) => ({ ...current, seen: current.seen + payload.ideas.length }));
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : String(caught));
+      } finally {
+        setStatus("idle");
+      }
+    },
+    [curatedOnly, filter],
+  );
 
   async function keep(idea: Idea): Promise<void> {
     const already = savedIds.has(idea.id);
@@ -168,22 +175,28 @@ export function Deck({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={draw}
+          onClick={() => {
+            setCuratedOnly(false);
+            void draw(false);
+          }}
           disabled={busy}
           className="rounded-xl border border-phosphor/30 bg-phosphor/10 px-4 py-2 text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-40"
         >
           {busy ? "Thinking…" : current ? "Another one" : "Give me something"}
+          <span className="ml-2 text-xs text-mist-400/70">the model · about a minute</span>
         </button>
-        <label className="flex items-center gap-2 text-sm text-mist-400">
-          <input
-            type="checkbox"
-            checked={curatedOnly}
-            onChange={(event) => setCuratedOnly(event.target.checked)}
-            className="h-4 w-4 accent-[var(--color-phosphor)]"
-          />
-          curated only
-          <span className="text-xs text-mist-400/50">(instant, no model)</span>
-        </label>
+        <button
+          type="button"
+          onClick={() => {
+            setCuratedOnly(true);
+            void draw(true);
+          }}
+          disabled={busy}
+          className="rounded-xl border border-ink-600 px-4 py-2 text-sm text-mist-200 transition hover:border-mist-400/60 disabled:opacity-40"
+        >
+          Something curated
+          <span className="ml-2 text-xs text-mist-400/70">instant</span>
+        </button>
         {note ? <span className="text-xs text-mist-400/70">{note}</span> : null}
       </div>
 
@@ -228,21 +241,30 @@ export function Deck({
 }
 
 function describe(payload: DrawResponse): string {
-  const { telemetry, fallback } = payload;
+  const { telemetry, fallback, modelServer } = payload;
+  const wake =
+    modelServer?.started === true
+      ? ` · woke the model in ${(modelServer.waitedMs / 1000).toFixed(0)}s`
+      : "";
   if (fallback) return `${fallback.reason} — showing a curated card instead.`;
   return telemetry.fallbackUsed
     ? `${telemetry.model ?? "model"} · fell back to curated`
-    : `${telemetry.model ?? "model"} · ${(telemetry.latencyMs / 1000).toFixed(1)}s`;
+    : `${telemetry.model ?? "model"} · ${(telemetry.latencyMs / 1000).toFixed(1)}s${wake}`;
 }
 
 function Waiting({ status, elapsed }: { status: Status; elapsed: number }): React.ReactElement {
+  const minutes = Math.floor(elapsed / 60);
+  const clock = minutes > 0 ? `${minutes}m ${elapsed % 60}s` : `${elapsed}s`;
   return (
     <div className="rounded-2xl border border-ink-600 bg-ink-800/40 px-6 py-14 text-center">
       <p className="font-[family-name:var(--font-display)] text-lg text-mist-200">
         {status === "expanding" ? "Taking it further…" : "Reaching for one…"}
       </p>
       <p className="mt-2 text-sm text-mist-400/70">
-        {elapsed}s — the model runs on this machine, so it thinks for about ten seconds.
+        {clock} — a thirty-billion-parameter model is writing this card out word by word on
+        this machine, one word about every tenth of a second. The very first one also waits
+        half a minute while its weights load onto the graphics card. Use the curated button if
+        you would rather not wait.
       </p>
     </div>
   );

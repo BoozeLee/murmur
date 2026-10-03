@@ -1,0 +1,15 @@
+[Unit]
+# How long the model server may sit idle before it gives the card back.
+#
+# OnActiveSec counts from when the timer became active, and every draw restarts
+# it, so the countdown is always "20 minutes since she last asked for something".
+# Not persistent on purpose: a missed window across a reboot must not fire a
+# stop for a server that is not running.
+
+[Timer]
+OnActiveSec=20min
+AccuracySec=30s
+Unit=murmur-model-idle.service
+
+[Install]
+# Deliberately no WantedBy. The app arms this timer by restarting it.

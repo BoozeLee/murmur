@@ -1,0 +1,47 @@
+[Unit]
+# Murmur's model server: the 30B MoE the deck draws from.
+#
+# It is NOT started at boot. It holds nearly the whole graphics card, and
+# open-webui needs that card too. It is started on demand by a draw (see
+# src/lib/model-server.ts) and shut down again by murmur-model-idle.timer once
+# she stops painting.
+#
+# No -ngl on the command line, on purpose: the weights are larger than the card,
+# so asking for all of them fails with cudaMalloc out-of-memory. Omitting it lets
+# llama.cpp put what fits on the GPU and keep the rest on the CPU.
+Description=Murmur model server (GLM 4.7 Flash Claude Opus 4.5 distill, MoE)
+Documentation=https://github.com/ggml-org/llama.cpp
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/USER/murmur
+EnvironmentFile=-%h/murmur/.env.local
+Environment=PATH=/home/USER/.bun/bin:/home/USER/.local/bin:/usr/local/bin:/usr/bin
+
+# The card has to be empty before 10 GB of weights start landing on it. This is
+# the measured failure, not a precaution.
+ExecStartPre=/home/USER/murmur/scripts/remember-and-release-card.sh
+
+ExecStart=/home/USER/llama.cpp-moe/build-vk/bin/llama-server \
+  --model /home/USER/models/glm-4.7-flash-claude-4.5-opus.iq2_m.gguf \
+  --alias glm-creative \
+  --host 127.0.0.1 \
+  --port 11436 \
+  --ctx-size 4096 \
+  --parallel 1 \
+  --threads 12
+
+# Hand the card back on every exit path, including a crash.
+ExecStopPost=/home/USER/murmur/scripts/restore-card.sh
+
+# on-failure rather than always: a model that cannot load should not be retried
+# in a tight loop, each attempt re-reading 10 GB off disk.
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+# Deliberately no WantedBy. This unit must never be enabled.
