@@ -26,12 +26,31 @@ const DRAFT: IdeaDraft = IdeaDraftSchema.parse({
     "Stand at the mouth of a casting hall whose moulds are all empty, one sodium lamp burning at the far end, and let the glow of cooling metal be the only other light there is.",
 });
 
-function okBody(content: string, over: Record<string, unknown> = {}): unknown {
-  return {
-    choices: [{ message: { content }, finish_reason: "stop" }],
-    usage: { prompt_tokens: 480, completion_tokens: 210 },
-    ...over,
-  };
+interface StreamShape {
+  finishReason?: string | null;
+  usage?: { prompt_tokens: number; completion_tokens: number } | null;
+}
+
+/**
+ * llama.cpp answers this endpoint as server-sent events, and the provider reads
+ * them line by line, so the stubs have to speak SSE rather than one JSON blob.
+ * `parts` splits the answer across several events the way a real stream does.
+ */
+function sseBody(content: string, over: StreamShape = {}, parts = 1): string {
+  const usage = over.usage === undefined ? { prompt_tokens: 480, completion_tokens: 210 } : over.usage;
+  const size = Math.max(1, Math.ceil(content.length / parts));
+  const slices = [...content.matchAll(new RegExp(`.{1,${size}}`, "gs"))].map((m) => m[0]);
+  const events = slices.map(
+    (slice) => `data: ${JSON.stringify({ choices: [{ delta: { content: slice }, finish_reason: null }] })}`,
+  );
+  events.push(
+    `data: ${JSON.stringify({
+      choices: [{ delta: {}, finish_reason: over.finishReason ?? "stop" }],
+      usage,
+    })}`,
+  );
+  events.push("data: [DONE]");
+  return `${events.join("\n")}\n\n`;
 }
 
 function context(overrides: Partial<GenerateContext> = {}): GenerateContext {
@@ -46,16 +65,16 @@ function context(overrides: Partial<GenerateContext> = {}): GenerateContext {
 
 const provider = createLlamacppProvider(defaultLlamacppOptions);
 
-function stubFetch(...bodies: unknown[]): { calls: unknown[] } {
+function stubFetch(...bodies: string[]): { calls: unknown[] } {
   const calls: unknown[] = [];
   let index = 0;
   globalThis.fetch = (async (_url: unknown, init: unknown) => {
     calls.push(JSON.parse((init as { body: string }).body));
     const body = bodies[Math.min(index, bodies.length - 1)];
     index += 1;
-    return new Response(JSON.stringify(body), {
+    return new Response(body, {
       status: 200,
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "text/event-stream" },
     });
   }) as typeof fetch;
   return { calls };
@@ -63,7 +82,7 @@ function stubFetch(...bodies: unknown[]): { calls: unknown[] } {
 
 describe("llamacpp provider", () => {
   it("reports the tokens the server counted", async () => {
-    stubFetch(okBody(JSON.stringify(DRAFT)));
+    stubFetch(sseBody(JSON.stringify(DRAFT)));
     const outcome = await provider.generate(context());
 
     expect(outcome.failure).toBeNull();
@@ -75,7 +94,7 @@ describe("llamacpp provider", () => {
   });
 
   it("constrains the model with the same schema the Ollama path uses", async () => {
-    const { calls } = stubFetch(okBody(JSON.stringify(DRAFT)));
+    const { calls } = stubFetch(sseBody(JSON.stringify(DRAFT)));
     await provider.generate(context());
 
     const sent = calls[0] as { response_format: { json_schema: { schema: unknown } } };
@@ -83,7 +102,7 @@ describe("llamacpp provider", () => {
   });
 
   it("turns thinking off so it cannot spend the output budget on reasoning", async () => {
-    const { calls } = stubFetch(okBody(JSON.stringify(DRAFT)));
+    const { calls } = stubFetch(sseBody(JSON.stringify(DRAFT)));
     await provider.generate(context());
 
     const sent = calls[0] as { chat_template_kwargs: { enable_thinking: boolean } };
@@ -92,8 +111,8 @@ describe("llamacpp provider", () => {
 
   it("repairs one schema failure and returns the repaired card", async () => {
     const { calls } = stubFetch(
-      okBody(JSON.stringify({ title: "incomplete" })),
-      okBody(JSON.stringify(DRAFT)),
+      sseBody(JSON.stringify({ title: "incomplete" })),
+      sseBody(JSON.stringify(DRAFT)),
     );
     const outcome = await provider.generate(context());
 
@@ -106,8 +125,8 @@ describe("llamacpp provider", () => {
   it("rejects an easel line that only restates the title", async () => {
     const echo = { ...DRAFT, prompt: DRAFT.title.toLowerCase() };
     const { calls } = stubFetch(
-      okBody(JSON.stringify(echo)),
-      okBody(JSON.stringify(DRAFT)),
+      sseBody(JSON.stringify(echo)),
+      sseBody(JSON.stringify(DRAFT)),
     );
     await provider.generate(context());
 
@@ -116,10 +135,9 @@ describe("llamacpp provider", () => {
   });
 
   it("does not retry output that hit the token ceiling", async () => {
-    const { calls } = stubFetch({
-      choices: [{ message: { content: '{"title":"cut off' }, finish_reason: "length" }],
-      usage: { prompt_tokens: 480, completion_tokens: 1200 },
-    });
+    const { calls } = stubFetch(
+      sseBody('{"title":"cut off', { finishReason: "length", usage: { prompt_tokens: 480, completion_tokens: 1200 } }),
+    );
     const outcome = await provider.generate(context());
 
     expect(calls).toHaveLength(1);
@@ -137,11 +155,20 @@ describe("llamacpp provider", () => {
   });
 
   it("refuses a title already in the corpus", async () => {
-    stubFetch(okBody(JSON.stringify(DRAFT)));
+    stubFetch(sseBody(JSON.stringify(DRAFT)));
     const outcome = await provider.generate(context({ excludeTitles: [DRAFT.title] }));
 
     expect(outcome.failure?.kind).toBe("empty");
     expect(outcome.ideas).toHaveLength(0);
+  });
+
+  it("reassembles an answer the server trickled out in pieces", async () => {
+    stubFetch(sseBody(JSON.stringify(DRAFT), {}, 40));
+    const outcome = await provider.generate(context());
+
+    expect(outcome.failure).toBeNull();
+    expect(outcome.ideas[0]?.title).toBe(DRAFT.title);
+    expect(outcome.stats.outputTokens).toBe(210);
   });
 
   it("gives up on its own deadline instead of hanging on a silent server", async () => {

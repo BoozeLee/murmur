@@ -82,6 +82,90 @@ function errorDetail(error: ChatResponse["error"]): string | null {
   return typeof error === "string" ? error : (error.message ?? "unknown error");
 }
 
+interface StreamChunk {
+  choices?: { delta?: { content?: string | null }; finish_reason?: string | null }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
+  error?: { message?: string } | string;
+}
+
+interface StreamedCompletion {
+  content: string;
+  finishReason: string | null;
+  usage: { prompt_tokens?: number; completion_tokens?: number } | null;
+  error: string | null;
+}
+
+/**
+ * Reads an OpenAI-shaped SSE stream and reassembles the one answer the caller
+ * wants out of it. Written line by line rather than buffered, because a card
+ * from this MoE is several minutes of trickle and buffering it whole is what
+ * loses the run.
+ */
+async function readSse(response: Response): Promise<StreamedCompletion> {
+  const out: StreamedCompletion = {
+    content: "",
+    finishReason: null,
+    usage: null,
+    error: null,
+  };
+  if (response.body === null) throw new Error("the stream had no body");
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    for (let newline = buffer.indexOf("\n"); newline !== -1; newline = buffer.indexOf("\n")) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      // Comments are keep-alives; anything that is not a data line is not ours.
+      if (line.length === 0 || line.startsWith(":") || !line.startsWith("data:")) continue;
+      const payload = line.slice("data:".length).trim();
+      if (payload === "[DONE]") continue;
+
+      let event: StreamChunk;
+      try {
+        event = JSON.parse(payload) as StreamChunk;
+      } catch {
+        // One unparseable line must not throw away seven minutes of card.
+        continue;
+      }
+
+      const failed = errorDetail(event.error);
+      if (failed !== null) {
+        out.error = failed;
+        await reader.cancel();
+        return out;
+      }
+      out.content += event.choices?.[0]?.delta?.content ?? "";
+      const reason = event.choices?.[0]?.finish_reason;
+      if (reason !== undefined && reason !== null) out.finishReason = reason;
+      if (event.usage !== undefined && event.usage !== null) out.usage = event.usage;
+    }
+  }
+
+  return out;
+}
+
+function classifyAbort(
+  error: unknown,
+  abortState: { client: boolean; deadline: boolean },
+  timeoutMs: number,
+): ProviderFailure {
+  if (abortState.client) return { kind: "aborted", detail: "client went away" };
+  if (abortState.deadline) {
+    return {
+      kind: "timeout",
+      detail: `no card after ${Math.round(timeoutMs / 1000)}s (${errorMessage(error)})`,
+    };
+  }
+  return { kind: "unreachable", detail: errorMessage(error) };
+}
+
 /**
  * One chat turn against llama.cpp.
  *
@@ -142,7 +226,18 @@ async function chat(
           messages,
           temperature,
           max_tokens: options.maxTokens,
-          stream: false,
+          // Streaming is not a nicety here, it is the only way a card survives.
+          // Measured on this box: with stream:false llama.cpp withholds the
+          // response headers until the whole completion exists, and bun's fetch
+          // gives up on the headers at exactly 300 s — measured twice, cards cut
+          // at 280 s succeeded and 300 s ones died with "The operation timed
+          // out." even though the provider asked for 30 minutes. With stream:true
+          // the headers arrive in 76 ms and the same request ran 407 s to
+          // completion. An AbortSignal cannot raise that cap, which is why the
+          // hand-rolled deadline below exists as well.
+          stream: true,
+          // llama.cpp only reports token usage on the last chunk if asked.
+          stream_options: { include_usage: true },
           cache_prompt: true,
           chat_template_kwargs: { enable_thinking: false },
           response_format: {
@@ -156,40 +251,38 @@ async function chat(
         }),
       });
     } catch (error) {
-      const kind = abortState.client
-        ? "aborted"
-        : abortState.deadline
-          ? "timeout"
-          : "unreachable";
-      const detail = abortState.client
-        ? "client went away"
-        : abortState.deadline
-          ? `no card after ${Math.round(options.timeoutMs / 1000)}s`
-          : errorMessage(error);
-      return blank({ kind, detail });
+      return blank(classifyAbort(error, abortState, options.timeoutMs));
     }
 
-    const latencyMs = Date.now() - started;
     if (!response.ok) {
       // 503 is llama.cpp's own "still loading the model", so it is named rather
       // than lumped in with a real fault.
       const waiting = response.status === 503 ? " (model still loading)" : "";
+      void response.body?.cancel();
       return blank({
         kind: "provider_error",
         detail: `HTTP ${response.status} ${response.statusText}${waiting}`,
       });
     }
 
-    const body = (await response.json()) as ChatResponse;
-    const errored = errorDetail(body.error);
-    if (errored !== null) return blank({ kind: "provider_error", detail: errored });
+    // Reading can also be cut short — the deadline may land mid-stream — so it
+    // gets the same classification as the connect.
+    let streamed: StreamedCompletion;
+    try {
+      streamed = await readSse(response);
+    } catch (error) {
+      return blank(classifyAbort(error, abortState, options.timeoutMs));
+    }
+    if (streamed.error !== null) {
+      return blank({ kind: "provider_error", detail: streamed.error });
+    }
 
-    const choice = body.choices?.[0];
-    const content = choice?.message?.content ?? "";
-    const inputTokens = body.usage?.prompt_tokens ?? null;
-    const outputTokens = body.usage?.completion_tokens ?? null;
+    const latencyMs = Date.now() - started;
+    const content = streamed.content;
+    const inputTokens = streamed.usage?.prompt_tokens ?? null;
+    const outputTokens = streamed.usage?.completion_tokens ?? null;
 
-    if (choice?.finish_reason === "length") {
+    if (streamed.finishReason === "length") {
       // The JSON was cut mid-object. Retrying would cost another few minutes to
       // reach the same wall, so this is reported instead of repaired.
       return {

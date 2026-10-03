@@ -111,7 +111,15 @@ export function appendDeepened(
   ]);
 
   const result: AppendResult = { added: [], duplicates: [], overLimit: [] };
-  for (const idea of ideas) {
+  for (const candidate of ideas) {
+    // Callers hand over whole Ideas, provenance and all. Only the draft fields are
+    // persisted — the writing model and the run's timestamp are recorded here and
+    // the rest is not — so the file's shape cannot depend on which night a card
+    // happened to arrive in. Stripping through the contract also means a stray
+    // field can never ride along into the pool.
+    const parsed = IdeaDraftSchema.safeParse(candidate);
+    if (!parsed.success) continue;
+    const idea = parsed.data;
     const key = titleKey(idea.title);
     if (known.has(key)) {
       result.duplicates.push(idea.title);
