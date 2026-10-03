@@ -3,6 +3,7 @@ import type { GenerateRequest, Idea, IdeaDraft } from "./schema";
 import { PROMPT_VERSION, TOOL_POLICY_VERSION } from "./prompts";
 import { corpusProvider } from "./providers/corpus";
 import { createOllamaProvider } from "./providers/ollama";
+import { createLlamacppProvider } from "./providers/llamacpp";
 import type {
   GenerateContext,
   GenerationTelemetry,
@@ -26,7 +27,7 @@ import type {
 export interface RoutingPolicy {
   taskClass: TaskClass;
   /** Which provider is asked first. */
-  preferred: "ollama" | "corpus";
+  preferred: "ollama" | "llamacpp" | "corpus";
   /** Whether a curated draw is allowed to answer instead. Always true here. */
   corpusFallback: boolean;
   /**
@@ -64,7 +65,19 @@ export const POLICIES: Record<TaskClass, RoutingPolicy> = {
     requiredOutput: "structured",
     why: "Same privacy class as a draw. Falls back to a deterministic fusion of the idea with a corpus partner, which is a real idea rather than an apology.",
   },
-  };
+  "corpus.deepen": {
+    taskClass: "corpus.deepen",
+    preferred: "llamacpp",
+    // A deepening run that silently answered from the existing corpus would
+    // deepen nothing while reporting success, so there is no fallback here.
+    corpusFallback: false,
+    cloudFallback: false,
+    maxCostEur: 0,
+    maxCount: 1,
+    requiredOutput: "structured",
+    why: "Overnight batch work, so the slow 30B MoE is affordable here and nowhere else. Its prose is stronger than the deck model's, and the cards are validated and written to the corpus rather than shown live.",
+  },
+};
 
 export interface RunResult {
   ideas: Idea[];
@@ -73,17 +86,27 @@ export interface RunResult {
   fallback: { from: string; reason: string } | null;
 }
 
-let provider: IdeaProvider | null = null;
+type ProviderName = RoutingPolicy["preferred"];
 
-function activeProvider(): IdeaProvider {
+const providers = new Map<ProviderName, IdeaProvider>();
+
+function activeProvider(name: ProviderName): IdeaProvider {
+  const existing = providers.get(name);
+  if (existing !== undefined) return existing;
   // Created lazily so importing the router in a test does not read env vars.
-  provider ??= createOllamaProvider();
-  return provider;
+  const created =
+    name === "llamacpp" ? createLlamacppProvider() : createOllamaProvider();
+  providers.set(name, created);
+  return created;
 }
 
-/** Test seam: swap the provider without touching the policy table. */
+/**
+ * Test seam: pin a provider name to an instance. Passing null clears every memo,
+ * so the next call rebuilds from the policy table.
+ */
 export function setProvider(next: IdeaProvider | null): void {
-  provider = next;
+  providers.clear();
+  if (next !== null) providers.set("ollama", next);
 }
 
 function requestId(): string {
@@ -157,7 +180,7 @@ export async function run(
     };
   }
 
-  const primary = activeProvider();
+  const primary = activeProvider(policy.preferred);
   const outcome = await primary.generate(context);
 
   if (outcome.failure === null) {
@@ -223,7 +246,7 @@ export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise
     promptVersion: PROMPT_VERSION,
     toolPolicyVersion: TOOL_POLICY_VERSION,
   };
-  const primary = activeProvider();
+  const primary = activeProvider(POLICIES["deck.expand"].preferred);
   const expanded = await primary.expand(idea, signal);
 
   if (expanded !== null) {

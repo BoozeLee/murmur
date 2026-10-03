@@ -83,11 +83,18 @@ export function excludeOf(exclude: readonly string[] | undefined): Set<string> {
   return new Set(exclude ?? []);
 }
 
-export function filterCorpus(filter: Filter, exclude?: readonly string[]): IdeaDraft[] {
+/**
+ * The pool is a parameter, not an import, so this function stays pure. The
+ * default is the hand-written seeds; the curated provider passes the seeds plus
+ * everything the overnight deepener has generated since.
+ */
+export function filterCorpus(
+  filter: Filter,
+  exclude?: readonly string[],
+  pool: readonly IdeaDraft[] = SEED_IDEAS,
+): IdeaDraft[] {
   const skip = excludeOf(exclude);
-  return SEED_IDEAS.filter(
-    (draft) => !skip.has(draft.title) && matches(draft, filter),
-  );
+  return pool.filter((draft) => !skip.has(draft.title) && matches(draft, filter));
 }
 
 export interface CuratedDraw {
@@ -107,15 +114,21 @@ export interface CuratedDraw {
  */
 export function drawCurated(
   filter: Filter,
-  options: { seed?: number; exclude?: readonly string[]; count?: number } = {},
+  options: {
+    seed?: number;
+    exclude?: readonly string[];
+    count?: number;
+    pool?: readonly IdeaDraft[];
+  } = {},
 ): CuratedDraw {
   const seed = options.seed ?? 0;
   const count = Math.max(1, options.count ?? 1);
   const rand = mulberry32(seed);
-  const strict = filterCorpus(filter, options.exclude);
+  const pool = options.pool ?? SEED_IDEAS;
+  const strict = filterCorpus(filter, options.exclude, pool);
   const widened = strict.length === 0;
-  const pool = widened ? filterCorpus({}, options.exclude) : strict;
-  return { drafts: pickMany(pool, count, rand), seed, widened };
+  const usable = widened ? filterCorpus({}, options.exclude, pool) : strict;
+  return { drafts: pickMany(usable, count, rand), seed, widened };
 }
 
 /** Interleave two palettes so neither idea's colours dominate the result. */

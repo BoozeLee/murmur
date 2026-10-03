@@ -35,7 +35,12 @@ export interface GenerationTelemetry {
     | "aborted";
 }
 
-export type TaskClass = "deck.draw" | "deck.expand";
+/**
+ * `corpus.deepen` is not a user action: it is the overnight batch that writes
+ * model-authored cards into the curated corpus. It is a separate class because
+ * it is the only task allowed to prefer the slow 30B runner.
+ */
+export type TaskClass = "deck.draw" | "deck.expand" | "corpus.deepen";
 
 export interface GenerateContext {
   request: GenerateRequest;

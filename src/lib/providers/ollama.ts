@@ -1,5 +1,4 @@
-import { qualityIssues } from "../quality";
-import { IdeaDraftSchema, ideaJsonSchema } from "../schema";
+import { ideaJsonSchema } from "../schema";
 import type { Idea, IdeaDraft } from "../schema";
 import {
   PROMPT_VERSION,
@@ -8,6 +7,7 @@ import {
   systemPrompt,
   userPrompt,
 } from "../prompts";
+import { parseDrafts } from "./parse";
 import type {
   GenerateContext,
   IdeaProvider,
@@ -142,34 +142,6 @@ async function chat(
     return { content, ...tokens, latencyMs, failure: { kind: "empty", detail: "no content" } };
   }
   return { content, ...tokens, latencyMs, failure: null };
-}
-
-/** Reject the whole answer if any single idea breaks the contract. */
-function parseDrafts(content: string): { drafts: IdeaDraft[] | null; reason: string } {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(content);
-  } catch (error) {
-    return { drafts: null, reason: `not valid JSON: ${errorMessage(error)}` };
-  }
-  const items = Array.isArray(raw) ? raw : [raw];
-  const drafts: IdeaDraft[] = [];
-  for (const item of items) {
-    const parsed = IdeaDraftSchema.safeParse(item);
-    if (!parsed.success) {
-      const first = parsed.error.issues[0];
-      return {
-        drafts: null,
-        reason: first === undefined ? "unknown schema failure" : `${first.path.join(".") || "(root)"}: ${first.code}`,
-      };
-    }
-    drafts.push(parsed.data);
-  }
-  const bad = drafts.flatMap(qualityIssues);
-  if (bad.length > 0) {
-    return { drafts: null, reason: bad[0] ?? "unknown quality failure" };
-  }
-  return { drafts, reason: "" };
 }
 
 /** Non-crypto hash; idea ids only need to be unique, not unguessable. */

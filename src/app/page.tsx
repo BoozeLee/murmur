@@ -1,5 +1,5 @@
 import { Deck } from "@/components/deck";
-import { SEED_IDEAS } from "@/lib/corpus/seeds";
+import { allIdeas } from "@/lib/corpus/deepened";
 import { getStore } from "@/lib/store";
 
 /**
@@ -14,7 +14,7 @@ export default async function Home(): Promise<React.ReactElement> {
   const [saved, stats] = await Promise.all([store.listSaved(), store.stats()]);
   return (
     <main>
-      <Deck initialSaved={saved} initialStats={stats} corpusSize={SEED_IDEAS.length} />
+      <Deck initialSaved={saved} initialStats={stats} corpusSize={allIdeas().length} />
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import { SEED_IDEAS } from "@/lib/corpus/seeds";
+import { allIdeas } from "@/lib/corpus/deepened";
 import { assertSameOrigin, errorResponse, json, readJson } from "@/lib/http";
 import { run } from "@/lib/router";
 import { getStore } from "@/lib/store";
@@ -32,7 +32,7 @@ export async function POST(request: Request): Promise<Response> {
 export async function GET(): Promise<Response> {
   try {
     const stats = await getStore().stats();
-    return json({ stats, corpusSize: SEED_IDEAS.length });
+    return json({ stats, corpusSize: allIdeas().length });
   } catch (error) {
     return errorResponse(error);
   }

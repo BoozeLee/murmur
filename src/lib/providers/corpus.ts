@@ -1,5 +1,5 @@
 import { drawCurated, fuse, hashString, mulberry32, pick } from "../engine";
-import { SEED_IDEAS } from "../corpus/seeds";
+import { allIdeas } from "../corpus/deepened";
 import type { Idea, IdeaDraft } from "../schema";
 import type { GenerateContext, IdeaProvider, ProviderOutcome } from "./types";
 
@@ -51,6 +51,7 @@ export const corpusProvider: IdeaProvider = {
         seed: baseSeed + index * 7919,
         exclude: [...seen],
         count: 1,
+        pool: allIdeas(),
       });
       const draft = draw.drafts[0];
       if (draft === undefined) break;
@@ -75,7 +76,8 @@ export const corpusProvider: IdeaProvider = {
 
   async expand(idea: IdeaDraft): Promise<Idea | null> {
     const rand = mulberry32(hashString(idea.title));
-    const others = SEED_IDEAS.filter((other) => other.title !== idea.title);
+    // Read once: a fusion needs a single consistent pool.
+    const others = allIdeas().filter((other) => other.title !== idea.title);
     const partner = pick(others, rand);
     if (partner === undefined) return null;
     const fused = fuse(idea, partner);
