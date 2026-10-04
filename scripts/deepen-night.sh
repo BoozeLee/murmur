@@ -13,6 +13,11 @@
 # the deck; if this run started it, the run shuts it down again, because a
 # llama-server left behind holds nearly the whole card.
 #
+# And it owns the one question worth answering before any of that: is there
+# anything left to write? A pool at its ceiling is the end the corpus was given a
+# ceiling to reach, so the run says so and leaves. Writing past it would not add
+# cards, only minutes and heat.
+#
 # The manual equivalent, for when you want to watch it:
 #   ./scripts/deepen-night.sh 3
 set -euo pipefail
@@ -27,6 +32,23 @@ UNIT="${MURMUR_MODEL_UNIT:-murmur-model.service}"
 BUN=/home/USER/.bun/bin/bun
 
 cd "$REPO_DIR"
+
+# Ask whether there is anything left to write before anything else happens. A
+# full pool is the designed end state, not a failure, and finding that out should
+# not cost 9.4 GB of VRAM: the answer is a file read, so it belongs above the
+# model bookkeeping rather than inside the loop. 3 is deepen-corpus's "the pool is
+# full"; every other non-zero code is a preflight that could not answer, which is a
+# different thing and must not be reported as a full pool.
+PREFLIGHT=0
+"$BUN" run scripts/deepen-corpus.ts --preflight || PREFLIGHT=$?
+if [ "$PREFLIGHT" -eq 3 ]; then
+  echo "deepen: the pool is at its ceiling; there is nothing left to write"
+  exit 0
+fi
+if [ "$PREFLIGHT" -ne 0 ]; then
+  echo "deepen: could not read the corpus to see whether it is full" >&2
+  exit 1
+fi
 
 free_mib() {
   nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null | head -1

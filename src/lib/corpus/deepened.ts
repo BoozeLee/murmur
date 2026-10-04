@@ -164,3 +164,16 @@ export function allIdeas(): IdeaDraft[] {
 export function generatedCount(): number {
   return loadDeepened().length;
 }
+
+/**
+ * Whether the drawable pool has reached its ceiling.
+ *
+ * The ceiling counts the seeds, because that is the `known` set `appendDeepened`
+ * enforces once it starts adding — so this is the same rule asked one question
+ * earlier rather than a second, looser one. The overnight job asks it before it
+ * loads anything: a full pool is the designed end state, and there is no reason to
+ * pull 9.4 GB onto the card to rediscover it.
+ */
+export function poolIsFull(): boolean {
+  return allIdeas().length >= DEEPENED_LIMIT;
+}

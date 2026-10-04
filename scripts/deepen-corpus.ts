@@ -1,4 +1,10 @@
-import { allIdeas, appendDeepened, generatedCount } from "../src/lib/corpus/deepened";
+import {
+  DEEPENED_LIMIT,
+  allIdeas,
+  appendDeepened,
+  generatedCount,
+  poolIsFull,
+} from "../src/lib/corpus/deepened";
 import { armIdleTimer } from "../src/lib/model-server";
 import { CATEGORIES } from "../src/lib/schema";
 import { run } from "../src/lib/router";
@@ -16,16 +22,34 @@ import { defaultLlamacppOptions } from "../src/lib/providers/llamacpp";
  *
  * The systemd timer runs the wrapper script instead, because the model server has
  * to be started and stopped around this and nothing here should be doing that.
+ * That wrapper also asks `--preflight` first, so a full pool is discovered before
+ * anything expensive happens.
  *
  * The idle timer is rearmed after every card. Without that, a card that takes
  * minutes would let the shutdown timer fire in the middle of a run and kill the
  * server halfway through writing the corpus.
  */
 
+/** `--preflight`'s "the pool is at its ceiling" exit code. Distinct from failure. */
+export const PREFLIGHT_POOL_FULL = 3;
+
 function flag(name: string, fallback: string): string {
   const index = process.argv.indexOf(`--${name}`);
   if (index === -1) return fallback;
   return process.argv[index + 1] ?? fallback;
+}
+
+function has(name: string): boolean {
+  return process.argv.includes(`--${name}`);
+}
+
+if (has("preflight")) {
+  const pool = allIdeas().length;
+  const full = poolIsFull();
+  console.log(
+    JSON.stringify({ pool, generated: generatedCount(), limit: DEEPENED_LIMIT, full }),
+  );
+  process.exit(full ? PREFLIGHT_POOL_FULL : 0);
 }
 
 const wanted = Number(flag("count", "6"));

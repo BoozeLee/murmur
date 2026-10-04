@@ -9,6 +9,7 @@ import {
   deepenedPath,
   generatedCount,
   loadDeepened,
+  poolIsFull,
 } from "./deepened";
 import { SEED_IDEAS } from "./seeds";
 import { IdeaDraftSchema } from "../schema";
@@ -142,5 +143,25 @@ describe("deepened corpus", () => {
     expect(result.overLimit).toHaveLength(3);
     expect(loadDeepened()).toHaveLength(DEEPENED_LIMIT - SEED_IDEAS.length);
     expect(allIdeas()).toHaveLength(DEEPENED_LIMIT);
+  });
+
+  it("calls the pool full only once appendDeepened would also refuse", () => {
+    // poolIsFull is the same rule asked one question earlier, so the two must not
+    // disagree at the boundary: a night that stops early on a pool the appender
+    // would still have grown has lost a card.
+    expect(poolIsFull()).toBe(false);
+
+    const filler = Array.from({ length: DEEPENED_LIMIT - SEED_IDEAS.length }, (_, index) =>
+      draft(`Filler ${index}`),
+    );
+    const filling = appendDeepened(filler, meta);
+
+    // The last card fits exactly, and only then does the pool count as full.
+    expect(filling.overLimit).toHaveLength(0);
+    expect(poolIsFull()).toBe(true);
+
+    const next = appendDeepened([draft("One Card Too Many")], meta);
+    expect(next.added).toHaveLength(0);
+    expect(next.overLimit).toEqual(["One Card Too Many"]);
   });
 });
