@@ -1,10 +1,10 @@
 [Unit]
-# Murmur's model server: the 30B MoE the deck draws from.
+# Murmur's model server: the 30B MoE the deepener writes the corpus with.
 #
 # It is NOT started at boot. It holds nearly the whole graphics card, and
-# open-webui needs that card too. It is started on demand by a draw (see
-# src/lib/model-server.ts) and shut down again by murmur-model-idle.timer once
-# she stops painting.
+# open-webui needs that card too. It is started on demand by whatever asks it for
+# a card (see src/lib/model-server.ts) and shut down again by
+# murmur-model-idle.timer once she stops painting.
 #
 # No -ngl on the command line, on purpose: the weights are larger than the card,
 # so asking for all of them fails with cudaMalloc out-of-memory. Omitting it lets
@@ -16,21 +16,41 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/home/USER/murmur
-EnvironmentFile=-%h/murmur/.env.local
 Environment=PATH=/home/USER/.bun/bin:/home/USER/.local/bin:/usr/local/bin:/usr/bin
+
+# The defaults live here, BEFORE EnvironmentFile, because EnvironmentFile wins
+# whatever comes before it -- so a .env.local can override any of them and
+# nothing else can. They have to exist at all: systemd expands a variable that is
+# not set to the empty string, so a missing .env.local would otherwise hand
+# llama-server "--ctx-size" with no argument and it would refuse to start.
+#
+# These used to be written straight into ExecStart below while .env.example
+# offered the same four as if they were knobs, so editing .env.local did nothing
+# at all. src/lib/docs.test.ts now fails if a variable named in .env.example is
+# not read by this unit or by the code.
+Environment=MURMUR_LLAMACPP_GGUF=/home/USER/models/glm-4.7-flash-claude-4.5-opus.iq2_m.gguf
+Environment=MURMUR_LLAMACPP_CTX=4096
+Environment=MURMUR_LLAMACPP_THREADS=12
+Environment=MURMUR_LLAMACPP_MODEL=glm-creative
+Environment=MURMUR_LLAMACPP_PORT=11436
+EnvironmentFile=-%h/murmur/.env.local
 
 # The card has to be empty before 10 GB of weights start landing on it. This is
 # the measured failure, not a precaution.
 ExecStartPre=/home/USER/murmur/scripts/remember-and-release-card.sh
 
+# The executable stays a literal path so systemd-analyze verify can still check
+# that it exists -- it cannot resolve a variable when it reads a unit off disk.
+# The build it names is a property of this machine, not a tuning knob, which is
+# why .env.example no longer lists it.
 ExecStart=/home/USER/llama.cpp-moe/build-vk/bin/llama-server \
-  --model /home/USER/models/glm-4.7-flash-claude-4.5-opus.iq2_m.gguf \
-  --alias glm-creative \
+  --model ${MURMUR_LLAMACPP_GGUF} \
+  --alias ${MURMUR_LLAMACPP_MODEL} \
   --host 127.0.0.1 \
-  --port 11436 \
-  --ctx-size 4096 \
+  --port ${MURMUR_LLAMACPP_PORT} \
+  --ctx-size ${MURMUR_LLAMACPP_CTX} \
   --parallel 1 \
-  --threads 12
+  --threads ${MURMUR_LLAMACPP_THREADS}
 
 # Hand the card back on every exit path, including a crash.
 ExecStopPost=/home/USER/murmur/scripts/restore-card.sh
