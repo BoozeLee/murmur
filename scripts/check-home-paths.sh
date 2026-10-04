@@ -88,9 +88,13 @@ self_test() {
     fi
   }
 
-  check canary-real-path 1 '/home/kilisan/models/glm.gguf'
+  # Built at runtime, not written out: once this script is tracked it is itself
+  # scanned, so a literal here would make the gate fail on its own canary.
+  local real_home
+  real_home="$(cd ~ && pwd)"
+  check canary-real-path 1 "$real_home/models/glm.gguf"
   check placeholders-only 0 '/home/USER and /home/example and /home/user'
-  check real-path-beside-placeholder 1 'ok /home/USER but not /home/kilisan'
+  check real-path-beside-placeholder 1 "ok /home/USER but not $real_home"
 
   rm -rf "$tmp"
   trap - RETURN
