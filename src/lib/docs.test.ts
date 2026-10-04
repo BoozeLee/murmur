@@ -127,6 +127,8 @@ function isRead(name: string, sources: Map<string, string>): boolean {
  * itself, and $CARDS is a read of a local, not of an environment variable; without
  * this every script-local would be reported as an undocumented setting.
  */
+const SHELL_OWNS = new Set(["PATH", "HOME", "BASH_SOURCE"]);
+
 export function readButUndocumented(
   doc: string,
   sources: Map<string, string>,
@@ -146,9 +148,10 @@ export function readButUndocumented(
         [...text.matchAll(/^\s*([A-Z][A-Z0-9_]*)=/gm)].map(([, n]) => n),
       );
       for (const [, name] of text.matchAll(/\$\{?([A-Z][A-Z0-9_]*)\b/g)) {
-        // PATH and HOME belong to systemd, not to us; naming them in .env.example
-        // would be advice about the machine rather than about this app.
-        if (name && name !== "PATH" && name !== "HOME" && !assignedHere.has(name)) {
+        // PATH and HOME belong to systemd and the shell rather than to us, and
+        // BASH_SOURCE is a bash array builtin. Naming any of them in
+        // .env.example would be advice about the machine, not about this app.
+        if (name && !SHELL_OWNS.has(name) && !assignedHere.has(name)) {
           read.add(name);
         }
       }

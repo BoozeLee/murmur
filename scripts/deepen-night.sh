@@ -22,14 +22,16 @@
 #   ./scripts/deepen-night.sh 3
 set -euo pipefail
 
-REPO_DIR=/home/USER/murmur
+# The repo is wherever this script is, so a clone under any name still runs.
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${MURMUR_LLAMACPP_PORT:-11436}"
 # Twelve a night. The deck is corpus-first now, so this run is the only thing
 # growing the pool. From 64 cards it is 28 nights — about four weeks — to reach
 # the 400-card ceiling, at roughly ten minutes of writing per night.
 CARDS="${1:-${MURMUR_DEEPEN_COUNT:-12}}"
 UNIT="${MURMUR_MODEL_UNIT:-murmur-model.service}"
-BUN=/home/USER/.bun/bin/bun
+# The systemd units put ~/.bun/bin on PATH; this is the same lookup by hand.
+BUN="$(command -v bun || echo bun)"
 
 cd "$REPO_DIR"
 

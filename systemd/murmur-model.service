@@ -15,8 +15,8 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/USER/murmur
-Environment=PATH=/home/USER/.bun/bin:/home/USER/.local/bin:/usr/local/bin:/usr/bin
+WorkingDirectory=%h/murmur
+Environment=PATH=%h/.bun/bin:%h/.local/bin:/usr/local/bin:/usr/bin
 
 # The defaults live here, BEFORE EnvironmentFile, because EnvironmentFile wins
 # whatever comes before it -- so a .env.local can override any of them and
@@ -28,7 +28,8 @@ Environment=PATH=/home/USER/.bun/bin:/home/USER/.local/bin:/usr/local/bin:/usr/b
 # offered the same four as if they were knobs, so editing .env.local did nothing
 # at all. src/lib/docs.test.ts now fails if a variable named in .env.example is
 # not read by this unit or by the code.
-Environment=MURMUR_LLAMACPP_GGUF=/home/USER/models/glm-4.7-flash-claude-4.5-opus.iq2_m.gguf
+Environment=MURMUR_LLAMACPP_BIN=/path/to/llama.cpp/build/bin/llama-server
+Environment=MURMUR_LLAMACPP_GGUF=/path/to/models/glm-4.7-flash-claude-4.5-opus.iq2_m.gguf
 Environment=MURMUR_LLAMACPP_CTX=4096
 Environment=MURMUR_LLAMACPP_THREADS=12
 Environment=MURMUR_LLAMACPP_MODEL=glm-creative
@@ -37,13 +38,16 @@ EnvironmentFile=-%h/murmur/.env.local
 
 # The card has to be empty before 10 GB of weights start landing on it. This is
 # the measured failure, not a precaution.
-ExecStartPre=/home/USER/murmur/scripts/remember-and-release-card.sh
+ExecStartPre=%h/murmur/scripts/remember-and-release-card.sh
 
-# The executable stays a literal path so systemd-analyze verify can still check
-# that it exists -- it cannot resolve a variable when it reads a unit off disk.
-# The build it names is a property of this machine, not a tuning knob, which is
-# why .env.example no longer lists it.
-ExecStart=/home/USER/llama.cpp-moe/build-vk/bin/llama-server \
+# The executable is MURMUR_LLAMACPP_BIN because a literal path here would print
+# one person's home directory into a file anyone can read. That costs the one
+# thing a literal bought: systemd-analyze verify can no longer check the
+# executable exists, since it cannot resolve a variable when reading a unit off
+# disk. Nothing else about the check is lost -- every other command and flag is
+# still verified -- and the path is still documented, still defaulted here, and
+# still readable from .env.local.
+ExecStart=${MURMUR_LLAMACPP_BIN} \
   --model ${MURMUR_LLAMACPP_GGUF} \
   --alias ${MURMUR_LLAMACPP_MODEL} \
   --host 127.0.0.1 \
@@ -53,7 +57,7 @@ ExecStart=/home/USER/llama.cpp-moe/build-vk/bin/llama-server \
   --threads ${MURMUR_LLAMACPP_THREADS}
 
 # Hand the card back on every exit path, including a crash.
-ExecStopPost=/home/USER/murmur/scripts/restore-card.sh
+ExecStopPost=%h/murmur/scripts/restore-card.sh
 
 # on-failure rather than always: a model that cannot load should not be retried
 # in a tight loop, each attempt re-reading 10 GB off disk.

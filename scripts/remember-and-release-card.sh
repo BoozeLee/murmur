@@ -13,6 +13,7 @@
 #    release-vram.sh is what makes this stick.
 set -uo pipefail
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MARKER=/tmp/murmur-model-stole-webui
 
 if systemctl --user is-active --quiet open-webui.service; then
@@ -21,5 +22,5 @@ if systemctl --user is-active --quiet open-webui.service; then
   echo "card: stopped open-webui so it cannot reclaim the GPU"
 fi
 
-/home/USER/murmur/scripts/release-vram.sh
+"$HERE/release-vram.sh"
 exit 0
