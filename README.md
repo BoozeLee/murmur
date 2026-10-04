@@ -16,7 +16,7 @@ was built and then cut, because nothing about a daily nudge was asked for.
 
 | Path | What it is | Speed |
 |---|---|---|
-| Curated | **what the button does.** 64 cards — 53 hand-written, plus the 11 the overnight deepener has added — organised around six subjects: architecture, design, engineering, development, intelligence, mechanics, wearing her finish: psychedelic, mystic, ethereal, mysterious, astronomic, esoteric | instant (~100ms) |
+| Curated | **what the button does.** 53 hand-written, plus whatever the overnight deepener has written since — organised around six subjects: architecture, design, engineering, development, intelligence, mechanics, wearing her finish: psychedelic, mystic, ethereal, mysterious, astronomic, esoteric | instant (~100ms) |
 | Fused | what "take it further" does: a card crossed with a corpus partner | instant |
 | Model | a **30B mixture-of-experts** on this machine, writing a fresh card through a JSON Schema it cannot escape. The second button, and the deepener's writer | ~40-65s |
 
