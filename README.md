@@ -109,7 +109,7 @@ quality rules and the corpus fallback exist for; a placeholder palette and a stu
 loop are now both rejections.
 
 The cost of a night is disk and heat, not money: nothing leaves the machine, and
-`MURMUR_DEEPEN_COUNT` (default 6) caps it.
+`MURMUR_DEEPEN_COUNT` (default 12) caps it.
 
 ## Running it
 

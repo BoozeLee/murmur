@@ -19,7 +19,10 @@ set -euo pipefail
 
 REPO_DIR=/home/USER/murmur
 PORT="${MURMUR_LLAMACPP_PORT:-11436}"
-CARDS="${1:-${MURMUR_DEEPEN_COUNT:-6}}"
+# Twelve a night. The deck is corpus-first now, so this run is the only thing
+# growing the pool. From 64 cards it is 28 nights — about four weeks — to reach
+# the 400-card ceiling, at roughly ten minutes of writing per night.
+CARDS="${1:-${MURMUR_DEEPEN_COUNT:-12}}"
 UNIT="${MURMUR_MODEL_UNIT:-murmur-model.service}"
 BUN=/home/USER/.bun/bin/bun
 
