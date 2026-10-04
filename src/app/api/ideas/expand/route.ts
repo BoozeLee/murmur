@@ -1,7 +1,7 @@
 import { assertSameOrigin, errorResponse, json, readJson } from "@/lib/http";
 import { ensureModelForRequest } from "@/lib/model-server";
 import { expandIdea, RequestError } from "@/lib/router";
-import { IdeaDraftSchema } from "@/lib/schema";
+import { ExpandRequestSchema } from "@/lib/schema";
 import { getStore } from "@/lib/store";
 
 /**
@@ -14,21 +14,19 @@ import { getStore } from "@/lib/store";
 export async function POST(request: Request): Promise<Response> {
   try {
     assertSameOrigin(request);
-    const body = await readJson(request);
-    const candidate = (body as { idea?: unknown } | null)?.idea;
-    const parsed = IdeaDraftSchema.safeParse(candidate);
+    const parsed = ExpandRequestSchema.safeParse(await readJson(request));
     if (!parsed.success) {
       throw new RequestError(
-        `bad request: idea is not a valid draft (${parsed.error.issues
+        `bad request: ${parsed.error.issues
           .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.code}`)
-          .join(", ")})`,
+          .join(", ")}`,
       );
     }
 
-    // An expansion always asks the model, so the server is booted here too —
-    // there is no curated-only shortcut on this route to skip it.
-    const modelServer = await ensureModelForRequest(body);
-    const result = await expandIdea(parsed.data);
+    // A curated expansion fuses with a corpus partner and never asks the model,
+    // so this returns null rather than loading ten gigabytes off disk.
+    const modelServer = await ensureModelForRequest(parsed.data);
+    const result = await expandIdea(parsed.data.idea, { curatedOnly: parsed.data.curatedOnly });
     await getStore().markSeen(result.ideas.map((idea) => idea.title));
     return json({ ...result, modelServer });
   } catch (error) {

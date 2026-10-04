@@ -116,7 +116,7 @@ export function Deck({
     setNote(already ? "Released." : "Kept. It is on your shelf.");
   }
 
-  async function expand(idea: Idea): Promise<void> {
+  async function expand(idea: Idea, viaModel: boolean): Promise<void> {
     setStatus("expanding");
     setError(null);
     setNote(null);
@@ -126,7 +126,7 @@ export function Deck({
       const response = await fetch("/api/ideas/expand", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ idea }),
+        body: JSON.stringify({ idea, curatedOnly: !viaModel }),
       });
       const payload = (await response.json()) as DrawResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? `request failed (${response.status})`);
@@ -219,7 +219,7 @@ export function Deck({
           busy={busy}
           onSave={(idea) => void keep(idea)}
           onDismiss={(idea) => void dismiss(idea)}
-          onExpand={(idea) => void expand(idea)}
+          onExpand={(idea, viaModel) => void expand(idea, viaModel)}
         />
       ) : null}
 
@@ -251,9 +251,18 @@ function describe(payload: DrawResponse): string {
       ? ` · woke the model in ${(modelServer.waitedMs / 1000).toFixed(0)}s`
       : "";
   if (fallback) return `${fallback.reason} — showing a curated card instead.`;
+  // Keyed on `provider`, not on a null `model`: both the curated draw and the
+  // curated fusion report provider "corpus" with no model, and labelling either
+  // of them "model" would credit the 30B MoE for a card it never saw.
+  if (telemetry.provider === "corpus") return `curated · ${elapsed(telemetry.latencyMs)}`;
   return telemetry.fallbackUsed
     ? `${telemetry.model ?? "model"} · fell back to curated`
-    : `${telemetry.model ?? "model"} · ${(telemetry.latencyMs / 1000).toFixed(1)}s${wake}`;
+    : `${telemetry.model ?? "model"} · ${elapsed(telemetry.latencyMs)}${wake}`;
+}
+
+/** A curated card answers in single-digit milliseconds; "0.0s" would read as broken. */
+function elapsed(ms: number): string {
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
 }
 
 function Waiting({ status, elapsed }: { status: Status; elapsed: number }): React.ReactElement {
@@ -267,8 +276,8 @@ function Waiting({ status, elapsed }: { status: Status; elapsed: number }): Reac
       <p className="mt-2 text-sm text-mist-400/70">
         {clock} — a thirty-billion-parameter model is writing this card out word by word on
         this machine, one word about every tenth of a second. The very first one also waits
-        half a minute while its weights load onto the graphics card. Use the curated button if
-        you would rather not wait.
+        half a minute while its weights load onto the graphics card. The instant buttons do
+        the same job without the wait.
       </p>
     </div>
   );

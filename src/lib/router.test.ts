@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { IdeaDraftSchema } from "./schema";
-import { POLICIES, run, setProvider } from "./router";
+import type { Idea } from "./schema";
+import { POLICIES, expandIdea, run, setProvider } from "./router";
 import type { GenerateContext, IdeaProvider, ProviderOutcome } from "./providers/types";
 
 /**
@@ -156,5 +157,45 @@ describe("run", () => {
       /count exceeds the 1 allowed for deck.expand/,
     );
     expect(calls).toEqual([]);
+  });
+});
+
+describe("expandIdea", () => {
+  const modelIdea: Idea = {
+    ...draft,
+    id: "from-the-model",
+    source: "corpus",
+    createdAt: "2026-10-04T00:00:00.000Z",
+  };
+
+  /** An expand stub that records whether the model was asked at all. */
+  function expandStub(name: string, expanded: Idea | null, calls: string[]): IdeaProvider {
+    return {
+      name,
+      generate: async () => okOutcome("glm-creative"),
+      expand: async () => {
+        calls.push("expand");
+        return expanded;
+      },
+    };
+  }
+
+  it("fuses with a corpus partner and never asks the model when curated", async () => {
+    const calls: string[] = [];
+    setProvider("llamacpp", expandStub("llamacpp", modelIdea, calls));
+    const result = await expandIdea(draft, { curatedOnly: true });
+    expect(calls).toEqual([]);
+    expect(result.telemetry.provider).toBe("corpus");
+    // Not a fallback: it was the path asked for, so no apology is recorded.
+    expect(result.fallback).toBeNull();
+    expect(result.telemetry.fallbackUsed).toBe(false);
+  });
+
+  it("still asks the model when the fusion was not the choice", async () => {
+    const calls: string[] = [];
+    setProvider("llamacpp", expandStub("llamacpp", modelIdea, calls));
+    const result = await expandIdea(draft);
+    expect(calls).toEqual(["expand"]);
+    expect(result.telemetry.provider).toBe("llamacpp");
   });
 });

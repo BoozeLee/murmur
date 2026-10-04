@@ -49,7 +49,8 @@ export function IdeaCard({
   busy: boolean;
   onSave: (idea: Idea) => void;
   onDismiss: (idea: Idea) => void;
-  onExpand: (idea: Idea) => void;
+  /** `true` asks the model; absent fuses with a corpus partner, which is instant. */
+  onExpand: (idea: Idea, viaModel: boolean) => void;
 }): React.ReactElement {
   return (
     <article className="rounded-2xl border border-ink-600 bg-ink-800/80 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_20px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-sm">
@@ -109,11 +110,21 @@ export function IdeaCard({
         </button>
         <button
           type="button"
-          onClick={() => onExpand(idea)}
+          onClick={() => onExpand(idea, false)}
+          disabled={busy}
+          className="rounded-lg border border-phosphor/30 bg-phosphor/10 px-3 py-1.5 text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-40"
+        >
+          Take it further
+          <span className="ml-1.5 text-xs text-mist-400/70">instant</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onExpand(idea, true)}
           disabled={busy}
           className="rounded-lg border border-ink-500 px-3 py-1.5 text-sm text-mist-200 transition hover:border-ink-500 hover:bg-ink-700 disabled:opacity-40"
         >
-          Take it further
+          Further, by the model
+          <span className="ml-1.5 text-xs text-mist-400/70">about a minute</span>
         </button>
         <button
           type="button"

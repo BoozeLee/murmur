@@ -188,3 +188,14 @@ export const GenerateRequestSchema = z.object({
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;
+
+/**
+ * Expand request. `curatedOnly` takes the card further by fusing it with a
+ * corpus partner instead of asking the model, which is the instant default.
+ * Validated as a whole so a non-boolean `curatedOnly` is a 400 rather than a
+ * silently-ignored field that boots the model the client asked not to boot.
+ */
+export const ExpandRequestSchema = z.object({
+  idea: IdeaDraftSchema,
+  curatedOnly: z.boolean().default(false),
+});

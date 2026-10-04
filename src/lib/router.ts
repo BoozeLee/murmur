@@ -63,7 +63,7 @@ export const POLICIES: Record<TaskClass, RoutingPolicy> = {
     maxCostEur: 0,
     maxCount: 1,
     requiredOutput: "structured",
-    why: "Same privacy class and same model as a draw. Falls back to a deterministic fusion of the idea with a corpus partner, which is a real idea rather than an apology.",
+    why: "Same privacy class and same model as a new card. But expanding is something she does mid-browse, so the default is the deterministic fusion of the idea with a corpus partner — instant, and a real idea rather than an apology. The model expansion is the opt-in: a minute of waiting for prose nobody has written down yet.",
   },
   "corpus.deepen": {
     taskClass: "corpus.deepen",
@@ -237,8 +237,12 @@ export async function run(
 }
 
 /** Take one idea further, same policy shape, same fallback contract. */
-export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise<RunResult> {
+export async function expandIdea(
+  idea: IdeaDraft,
+  options: { signal?: AbortSignal; curatedOnly?: boolean } = {},
+): Promise<RunResult> {
   const started = Date.now();
+  const { signal, curatedOnly = false } = options;
   const telemetryBase = {
     requestId: requestId(),
     taskClass: "deck.expand" as const,
@@ -246,6 +250,51 @@ export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise
     promptVersion: PROMPT_VERSION,
     toolPolicyVersion: TOOL_POLICY_VERSION,
   };
+  const telemetry = (
+    outcome: Pick<
+      GenerationTelemetry,
+      | "provider"
+      | "model"
+      | "latencyMs"
+      | "inputTokens"
+      | "outputTokens"
+      | "fallbackUsed"
+      | "fallbackReason"
+      | "terminationReason"
+    >,
+  ): GenerationTelemetry => ({
+    ...telemetryBase,
+    ...outcome,
+    requested: 1,
+    returned: 1,
+    validationFailures: 0,
+  });
+
+  // A curated expansion is a deterministic fusion with a corpus partner. It is
+  // the deck's default because it is instant, and because it was asked for on
+  // purpose it is not a fallback — so it reports exactly what a curated draw
+  // reports, rather than a card the model failed to improve.
+  if (curatedOnly) {
+    const fused = await corpusProvider.expand(idea, signal);
+    if (fused === null) {
+      throw new RequestError("could not expand: the corpus has no partner left");
+    }
+    return {
+      ideas: [fused],
+      fallback: null,
+      telemetry: telemetry({
+        provider: "corpus",
+        model: null,
+        latencyMs: Date.now() - started,
+        inputTokens: null,
+        outputTokens: null,
+        fallbackUsed: false,
+        fallbackReason: null,
+        terminationReason: "complete",
+      }),
+    };
+  }
+
   const primary = activeProvider(POLICIES["deck.expand"].preferred);
   const expanded = await primary.expand(idea, signal);
 
@@ -253,8 +302,7 @@ export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise
     return {
       ideas: [expanded],
       fallback: null,
-      telemetry: {
-        ...telemetryBase,
+      telemetry: telemetry({
         provider: primary.name,
         model: expanded.model ?? null,
         latencyMs: expanded.latencyMs ?? Date.now() - started,
@@ -262,11 +310,8 @@ export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise
         outputTokens: expanded.outputTokens ?? null,
         fallbackUsed: false,
         fallbackReason: null,
-        requested: 1,
-        returned: 1,
-        validationFailures: 0,
         terminationReason: "complete",
-      },
+      }),
     };
   }
 
@@ -278,8 +323,7 @@ export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise
   return {
     ideas: [fused],
     fallback: { from: primary.name, reason: "model produced no usable expansion" },
-    telemetry: {
-      ...telemetryBase,
+    telemetry: telemetry({
       provider: "corpus",
       model: null,
       latencyMs: Date.now() - started,
@@ -287,11 +331,8 @@ export async function expandIdea(idea: IdeaDraft, signal?: AbortSignal): Promise
       outputTokens: null,
       fallbackUsed: true,
       fallbackReason: "model produced no usable expansion",
-      requested: 1,
-      returned: 1,
-      validationFailures: 0,
       terminationReason: "validation_rejected",
-    },
+    }),
   };
 }
 
