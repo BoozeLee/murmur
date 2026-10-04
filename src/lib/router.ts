@@ -53,7 +53,7 @@ export const POLICIES: Record<TaskClass, RoutingPolicy> = {
     maxCostEur: 0,
     maxCount: 4,
     requiredOutput: "structured",
-    why: "The whole point of the app, so it gets the model whose prose is actually worth reading — the 30B MoE, locally, with nothing leaving the machine. The price is minutes instead of seconds, which is why the curated draw is the default button and the model is opt-in. The corpus answers if the model server will not come up, so a draw never dead-ends.",
+    why: "The model whose prose is worth reading is the 30B MoE, locally, with nothing leaving the machine — but a card costs about a minute to write and she is browsing, not waiting, so the deck draws from the corpus by default and sends `curatedOnly`. This row is what answers when she asks for something new on purpose, and the corpus answers if the model server will not come up, so a draw never dead-ends.",
   },
   "deck.expand": {
     taskClass: "deck.expand",

@@ -31,7 +31,11 @@ export function Deck({
   const [saved, setSaved] = useState<SavedIdea[]>(initialSaved);
   const [stats, setStats] = useState<StoreStats>(initialStats);
   const [filter, setFilter] = useState<DeckFilter>(EMPTY_FILTER);
-  const [curatedOnly, setCuratedOnly] = useState(false);
+  // Curated first. The corpus is what she browses, and it answers in
+  // milliseconds without the 30B MoE having to load ten gigabytes off disk.
+  // The model stays reachable for the one thing the corpus cannot do — invent
+  // something nobody has written down yet — but it is the opt-in, not the wait.
+  const [curatedOnly, setCuratedOnly] = useState(true);
   const [status, setStatus] = useState<Status>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -176,26 +180,26 @@ export function Deck({
         <button
           type="button"
           onClick={() => {
-            setCuratedOnly(false);
-            void draw(false);
+            setCuratedOnly(true);
+            void draw(true);
           }}
           disabled={busy}
           className="rounded-xl border border-phosphor/30 bg-phosphor/10 px-4 py-2 text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-40"
         >
           {busy ? "Thinking…" : current ? "Another one" : "Give me something"}
-          <span className="ml-2 text-xs text-mist-400/70">the model · about a minute</span>
+          <span className="ml-2 text-xs text-mist-400/70">instant</span>
         </button>
         <button
           type="button"
           onClick={() => {
-            setCuratedOnly(true);
-            void draw(true);
+            setCuratedOnly(false);
+            void draw(false);
           }}
           disabled={busy}
           className="rounded-xl border border-ink-600 px-4 py-2 text-sm text-mist-200 transition hover:border-mist-400/60 disabled:opacity-40"
         >
-          Something curated
-          <span className="ml-2 text-xs text-mist-400/70">instant</span>
+          Something new
+          <span className="ml-2 text-xs text-mist-400/70">the model · about a minute</span>
         </button>
         {note ? <span className="text-xs text-mist-400/70">{note}</span> : null}
       </div>
