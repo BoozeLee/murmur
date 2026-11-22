@@ -1,3 +1,8 @@
+[![Gates](https://github.com/BoozeLee/murmur/actions/workflows/gates.yml/badge.svg)](https://github.com/BoozeLee/murmur/actions/workflows/gates.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+
 # Murmur
 
 One painting idea at a time. Take it or leave it.
