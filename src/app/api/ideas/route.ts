@@ -1,6 +1,7 @@
 import { allIdeas } from "@/lib/corpus/deepened";
 import { assertSameOrigin, errorResponse, json, readJson } from "@/lib/http";
 import { ensureModelForRequest } from "@/lib/model-server";
+import { zaiConfigured } from "@/lib/providers/zai";
 import { run } from "@/lib/router";
 import { getStore } from "@/lib/store";
 
@@ -28,13 +29,24 @@ export async function POST(request: Request): Promise<Response> {
     const [seen, dismissed] = await Promise.all([store.listSeen(), store.listDismissed()]);
     const exclude = [...new Set([...seen, ...dismissed])];
 
-    const modelServer = await ensureModelForRequest(body);
+    // A hosted draw must not wake ten gigabytes of local weights for nothing.
+    const useCloud =
+      process.env.MURMUR_CLOUD_PROVIDER === "zai" && zaiConfigured() && !curatedOnlyRequest(body);
+    const modelServer = useCloud ? null : await ensureModelForRequest(body);
     const result = await run("deck.draw", body, [], exclude);
     await store.markSeen(result.ideas.map((idea) => idea.title));
     return json({ ...result, modelServer });
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+function curatedOnlyRequest(body: unknown): boolean {
+  return (
+    typeof body === "object" &&
+    body !== null &&
+    (body as { curatedOnly?: unknown }).curatedOnly === true
+  );
 }
 
 /** GET /api/ideas — what the machine has, for the footer counters. */

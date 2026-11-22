@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-
+import { SEED_IDEAS } from "./corpus/seeds";
 import {
   clip,
   drawCurated,
@@ -12,9 +12,8 @@ import {
   pickMany,
   shuffle,
 } from "./engine";
-import { SEED_IDEAS } from "./corpus/seeds";
-import { IdeaDraftSchema } from "./schema";
 import type { IdeaDraft } from "./schema";
+import { IdeaDraftSchema } from "./schema";
 
 const anyFilter = {};
 
@@ -147,18 +146,12 @@ describe("matches", () => {
   it("requires every listed tag, not any of them", () => {
     expect(matches(draft, { tags: [draft.tags[0]!] })).toBe(true);
     expect(matches(draft, { tags: [draft.tags[0]!, draft.tags[1]!] })).toBe(true);
-    expect(matches(draft, { tags: [draft.tags[0]!, "bioluminescent"] })).toBe(
-      false,
-    );
+    expect(matches(draft, { tags: [draft.tags[0]!, "bioluminescent"] })).toBe(false);
   });
 
   it("is a conjunction of category and tags", () => {
-    expect(matches(draft, { category: draft.category, tags: [draft.tags[0]!] })).toBe(
-      true,
-    );
-    expect(matches(draft, { category: "portrait", tags: [draft.tags[0]!] })).toBe(
-      false,
-    );
+    expect(matches(draft, { category: draft.category, tags: [draft.tags[0]!] })).toBe(true);
+    expect(matches(draft, { category: "portrait", tags: [draft.tags[0]!] })).toBe(false);
   });
 });
 

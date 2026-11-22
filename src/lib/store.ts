@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { IdeaSchema, type Idea } from "./schema";
+import { type Idea, IdeaSchema } from "./schema";
 
 /**
  * The durable layer, deliberately the dumbest one that can work. One painter,
@@ -80,13 +80,15 @@ class FileStore implements Store {
       raw = await readFile(this.#path(name), "utf8");
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return fallback;
-      throw new Error(`murmur: cannot read ${name}: ${(error as Error).message}`);
+      throw new Error(`murmur: cannot read ${name}: ${(error as Error).message}`, { cause: error });
     }
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
     } catch (error) {
-      throw new Error(`murmur: ${name}.json is not valid JSON: ${(error as Error).message}`);
+      throw new Error(`murmur: ${name}.json is not valid JSON: ${(error as Error).message}`, {
+        cause: error,
+      });
     }
     return validate ? validate(parsed) : (parsed as T);
   }
@@ -117,9 +119,7 @@ class FileStore implements Store {
 
   #loadStrings(name: string): Promise<string[]> {
     return this.#load<string[]>(name, [], (value) =>
-      Array.isArray(value)
-        ? value.filter((item): item is string => typeof item === "string")
-        : [],
+      Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [],
     );
   }
 

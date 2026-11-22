@@ -14,11 +14,11 @@ was built and then cut, because nothing about a daily nudge was asked for.
 
 ## Where the ideas come from
 
-| Path | What it is | Speed |
-|---|---|---|
+| Path    | What it is                                                                                                                                                                                                                                                                                      | Speed            |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | Curated | **what the button does.** 53 hand-written, plus whatever the overnight deepener has written since — organised around six subjects: architecture, design, engineering, development, intelligence, mechanics, wearing her finish: psychedelic, mystic, ethereal, mysterious, astronomic, esoteric | instant (~100ms) |
-| Fused | what "take it further" does: a card crossed with a corpus partner | instant |
-| Model | a **30B mixture-of-experts** on this machine, writing a fresh card through a JSON Schema it cannot escape. The second button, and the deepener's writer | ~40-65s |
+| Fused   | what "take it further" does: a card crossed with a corpus partner                                                                                                                                                                                                                               | instant          |
+| Model   | a **30B mixture-of-experts** on this machine, writing a fresh card through a JSON Schema it cannot escape. The second button, and the deepener's writer                                                                                                                                         | ~40-65s          |
 
 **The deck is corpus-first.** Pressing the first button waits for nothing,
 because the writing already happened — overnight, while the machine was idle.
@@ -94,10 +94,10 @@ The first card it actually produced, unedited, is in `.data/corpus/deepened.json
 > **Kinematic Disruption Surface** · abstract · mechanics, architecture, intelligence
 > A horizontal surface showing partial building disintegration during earthquake
 > motion, with control systems still active.
-> *The problem:* the impossible state of a control system operating while the
+> _The problem:_ the impossible state of a control system operating while the
 > structure it serves fails, displaying reading errors from a temblor's peak
 > acceleration phase where uncertainty exceeds signal clarity.
-> *At the easel:* Paint a horizontal surface showing a building's control interface
+> _At the easel:_ Paint a horizontal surface showing a building's control interface
 > during disintegration, with sensor readings displaying total signal loss as the
 > frame tilts, apply steel gray and yellow with heavy impasto where stress points
 > would be, arrange the center canted with shadows casting long from a single high
@@ -178,7 +178,7 @@ rows — there is nothing to retrieve from and nobody to authorise against),
 LangGraph (three task classes and no durable state), Temporal or a queue (the only
 background work is one batch that runs, appends and exits), MCP (no capability is
 reused across clients), Langfuse (nothing to correlate), Supabase, and a second
-FastAPI service (the route handlers *are* the API; a separate process would buy
+FastAPI service (the route handlers _are_ the API; a separate process would buy
 nothing for one client).
 
 ## Layout

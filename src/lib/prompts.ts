@@ -9,8 +9,8 @@
  */
 import { MOOD, PILLARS } from "./vocabulary";
 
-export { MOOD, PILLARS } from "./vocabulary";
 export type { Pillar } from "./vocabulary";
+export { MOOD, PILLARS } from "./vocabulary";
 
 export const PROMPT_VERSION = "2026-10-03.2";
 export const TOOL_POLICY_VERSION = "murmur.tools.v1";
@@ -50,13 +50,26 @@ export interface PromptOptions {
   seedTitles?: readonly string[];
   /** A temperature hint, so consecutive ideas at one temperature differ. */
   nudge?: string;
+  /** The painter's own words. Kept verbatim so the model sees her phrasing. */
+  brief?: string;
+  language?: "en" | "nl";
 }
+
+const NL_RULES = [
+  "Schrijf alle velden in het Nederlands. Geen Engelse zinnen, ook niet in de titel.",
+  "Verbied: dromerig, etherische gloed, grillig, gezellig, cinematisch, 'een gevoel van'.",
+  "Gebruik niet de woorden surrealisme, surreëel of avant-garde.",
+].join("\n");
 
 export function userPrompt(options: PromptOptions): string {
   const lines: string[] = ["Invent one painting idea."];
   if (options.category !== undefined) lines.push(`Category: ${options.category}.`);
   if (options.tags !== undefined && options.tags.length > 0) {
     lines.push(`It must carry these tags: ${options.tags.join(", ")}.`);
+  }
+  if (options.brief !== undefined && options.brief.trim().length > 0) {
+    lines.push("The painter's brief, in her own words:", options.brief.trim());
+    lines.push("Take the brief seriously. Do not replace it with a generic idea.");
   }
   if (options.seedTitles !== undefined && options.seedTitles.length > 0) {
     lines.push(
@@ -66,6 +79,7 @@ export function userPrompt(options: PromptOptions): string {
   }
   if (options.nudge !== undefined) lines.push(options.nudge);
   lines.push("", FIELD_RULES, "", ANTI_GENERIC);
+  if (options.language === "nl") lines.push("", NL_RULES);
   return lines.join("\n");
 }
 
@@ -75,8 +89,7 @@ export function userPrompt(options: PromptOptions): string {
  */
 export function correctionPrompt(reason: string): string {
   return [
-    "That answer was rejected: " + reason,
+    `That answer was rejected: ${reason}`,
     "Return the JSON object again, with every field present, correct and concrete.",
   ].join("\n");
 }
-

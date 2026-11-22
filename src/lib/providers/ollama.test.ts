@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SEED_IDEAS } from "../corpus/seeds";
-import { GenerateRequestSchema, type GenerateRequest } from "../schema";
+import { type GenerateRequest, GenerateRequestSchema } from "../schema";
 import { createOllamaProvider, type OllamaOptions } from "./ollama";
 import type { GenerateContext } from "./types";
 
@@ -90,7 +90,10 @@ describe("ollama provider", () => {
 
   it("gives up as a typed failure when the repair is still invalid", async () => {
     const bad = JSON.stringify({ ...VALID, category: "sculpture" });
-    vi.stubGlobal("fetch", vi.fn(async () => reply(bad)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => reply(bad)),
+    );
 
     const outcome = await createOllamaProvider(OPTIONS).generate(context());
 
@@ -127,7 +130,10 @@ describe("ollama provider", () => {
   });
 
   it("skips a model reply that repeats a title already on screen", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => reply(JSON.stringify(VALID))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => reply(JSON.stringify(VALID))),
+    );
 
     const outcome = await createOllamaProvider(OPTIONS).generate({
       ...context(),

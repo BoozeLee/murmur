@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { IdeaSchema, type Idea } from "./schema";
+import { type Idea, IdeaSchema } from "./schema";
 import { createFileStore, type Store } from "./store";
 
 function idea(overrides: Partial<Idea> = {}): Idea {

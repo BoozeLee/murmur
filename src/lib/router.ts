@@ -1,9 +1,8 @@
-import { GenerateRequestSchema } from "./schema";
-import type { GenerateRequest, Idea, IdeaDraft } from "./schema";
+import { type ArtworkAnalysisRequest, fingerprintToBrief, fingerprintToTags } from "./artwork";
 import { PROMPT_VERSION, TOOL_POLICY_VERSION } from "./prompts";
 import { corpusProvider } from "./providers/corpus";
-import { createOllamaProvider } from "./providers/ollama";
 import { createLlamacppProvider } from "./providers/llamacpp";
+import { createOllamaProvider } from "./providers/ollama";
 import type {
   GenerateContext,
   GenerationTelemetry,
@@ -11,6 +10,9 @@ import type {
   ProviderFailure,
   TaskClass,
 } from "./providers/types";
+import { analyzeArtwork, createZaiProvider, zaiConfigured } from "./providers/zai";
+import type { GenerateRequest, Idea, IdeaDraft, Tag } from "./schema";
+import { GenerateRequestSchema, TAGS } from "./schema";
 
 /**
  * Routing policy, in code.
@@ -27,7 +29,7 @@ import type {
 export interface RoutingPolicy {
   taskClass: TaskClass;
   /** Which provider is asked first. */
-  preferred: "ollama" | "llamacpp" | "corpus";
+  preferred: "ollama" | "llamacpp" | "corpus" | "zai";
   /** Whether a curated draw is allowed to answer instead. Always true here. */
   corpusFallback: boolean;
   /**
@@ -36,6 +38,12 @@ export interface RoutingPolicy {
    * the machine.
    */
   cloudFallback: boolean;
+  /**
+   * Whether this task may use the opt-in hosted provider. Unlike `cloudFallback`
+   * (which records a historical policy decision), this is a live switch: it only
+   * takes effect when `MURMUR_CLOUD_PROVIDER=zai` and a key are present.
+   */
+  cloudAllowed?: boolean;
   /** Upper bound on what one call may cost. Recorded, not yet enforceable. */
   maxCostEur: number;
   /** How many ideas the UI may ask for in one action. */
@@ -50,10 +58,11 @@ export const POLICIES: Record<TaskClass, RoutingPolicy> = {
     preferred: "llamacpp",
     corpusFallback: true,
     cloudFallback: false,
+    cloudAllowed: true,
     maxCostEur: 0,
     maxCount: 4,
     requiredOutput: "structured",
-    why: "The model whose prose is worth reading is the 30B MoE, locally, with nothing leaving the machine — but a card costs about a minute to write and she is browsing, not waiting, so the deck draws from the corpus by default and sends `curatedOnly`. This row is what answers when she asks for something new on purpose, and the corpus answers if the model server will not come up, so a draw never dead-ends.",
+    why: "The model whose prose is worth reading is the 30B MoE, locally, with nothing leaving the machine — but a card costs about a minute to write and she is browsing, not waiting, so the deck draws from the corpus by default and sends `curatedOnly`. This row is what answers when she asks for something new on purpose, and the corpus answers if the model server will not come up, so a draw never dead-ends. With an explicit env flag, a hosted model may answer instead; that is a deliberate privacy trade, never a fallback.",
   },
   "deck.expand": {
     taskClass: "deck.expand",
@@ -77,6 +86,17 @@ export const POLICIES: Record<TaskClass, RoutingPolicy> = {
     requiredOutput: "structured",
     why: "Same model as a draw, but unattended: this is the one place a card can be afforded without anyone waiting, and the cards are validated and written to the corpus so later draws are instant. No fallback here — a deepening run that silently answered from the existing corpus would deepen nothing while reporting success.",
   },
+  "deck.analyze": {
+    taskClass: "deck.analyze",
+    preferred: "corpus",
+    corpusFallback: true,
+    cloudFallback: false,
+    cloudAllowed: true,
+    maxCostEur: 0,
+    maxCount: 1,
+    requiredOutput: "structured",
+    why: "There is no vision model on this machine, so an uploaded painting is first read locally on a canvas. The hosted vision model is the opt-in way to improve on it; when it is absent, the measured palette and light rank the curated shelf instead. Nothing about an image leaves the machine unless she asks for an improvement.",
+  },
 };
 
 export interface RunResult {
@@ -95,9 +115,20 @@ function activeProvider(name: ProviderName): IdeaProvider {
   if (existing !== undefined) return existing;
   // Created lazily so importing the router in a test does not read env vars.
   const created =
-    name === "llamacpp" ? createLlamacppProvider() : createOllamaProvider();
+    name === "llamacpp"
+      ? createLlamacppProvider()
+      : name === "zai"
+        ? createZaiProvider()
+        : createOllamaProvider();
   providers.set(name, created);
   return created;
+}
+
+/** The hosted path is opt-in and key-gated; it is never a silent fallback. */
+function cloudEnabled(policy: RoutingPolicy): boolean {
+  return (
+    policy.cloudAllowed === true && process.env.MURMUR_CLOUD_PROVIDER === "zai" && zaiConfigured()
+  );
 }
 
 /**
@@ -147,11 +178,12 @@ export async function run(
     excludeTitles,
     taskClass,
   };
+  const cloud = cloudEnabled(policy);
 
   const telemetryBase = {
     requestId: id,
     taskClass,
-    dataSensitivity: "local_only" as const,
+    dataSensitivity: (cloud ? "may_leave_lan" : "local_only") as "local_only" | "may_leave_lan",
     promptVersion: PROMPT_VERSION,
     toolPolicyVersion: TOOL_POLICY_VERSION,
   };
@@ -180,7 +212,7 @@ export async function run(
     };
   }
 
-  const primary = activeProvider(policy.preferred);
+  const primary = activeProvider(cloud ? "zai" : policy.preferred);
   const outcome = await primary.generate(context);
 
   if (outcome.failure === null) {
@@ -212,7 +244,9 @@ export async function run(
   const reason = `${outcome.failure.kind}: ${outcome.failure.detail}`;
 
   if (fallbackOutcome.failure !== null) {
-    throw new RequestError(`${primary.name} failed (${reason}) and so did the corpus (${fallbackOutcome.failure.detail})`);
+    throw new RequestError(
+      `${primary.name} failed (${reason}) and so did the corpus (${fallbackOutcome.failure.detail})`,
+    );
   }
 
   return {
@@ -234,6 +268,75 @@ export async function run(
       terminationReason: terminationReasonFor(outcome.failure.kind),
     },
   };
+}
+
+/**
+ * Improve an uploaded painting.
+ *
+ * The local canvas reading has already happened in the browser. With an opt-in
+ * key the hosted vision model writes one new card; without one the measured
+ * traits rank the curated shelf. Either way the response has the same shape as a
+ * normal draw, so the deck does not need a second rendering path.
+ */
+export async function analyzeArt(
+  request: ArtworkAnalysisRequest,
+  excludeTitles: readonly string[],
+): Promise<RunResult> {
+  const brief = fingerprintToBrief(request.fingerprint, request.note, request.language);
+  const tagSet = new Set<string>(TAGS);
+  const tags = fingerprintToTags(request.fingerprint).filter((tag): tag is Tag => tagSet.has(tag));
+  const corpusInput = {
+    curatedOnly: true,
+    count: 1,
+    language: request.language,
+    brief,
+    ...(tags.length > 0 ? { tags } : {}),
+  };
+
+  const useVision =
+    !request.curatedOnly &&
+    request.image !== undefined &&
+    process.env.MURMUR_CLOUD_PROVIDER === "zai" &&
+    zaiConfigured();
+
+  if (useVision) {
+    const outcome = await analyzeArtwork(request);
+    const idea = outcome.ideas[0];
+    if (outcome.failure === null && idea !== undefined) {
+      return {
+        ideas: [idea],
+        fallback: null,
+        telemetry: {
+          requestId: requestId(),
+          taskClass: "deck.analyze",
+          dataSensitivity: "may_leave_lan",
+          provider: "zai",
+          model: idea.model ?? null,
+          promptVersion: PROMPT_VERSION,
+          toolPolicyVersion: TOOL_POLICY_VERSION,
+          latencyMs: outcome.stats.latencyMs,
+          inputTokens: outcome.stats.inputTokens,
+          outputTokens: outcome.stats.outputTokens,
+          fallbackUsed: false,
+          fallbackReason: null,
+          requested: 1,
+          returned: 1,
+          validationFailures: outcome.stats.validationFailures,
+          terminationReason: "complete",
+        },
+      };
+    }
+    const result = await run("deck.analyze", corpusInput, [], excludeTitles);
+    return {
+      ...result,
+      fallback: {
+        from: "zai",
+        reason: `${outcome.failure?.kind ?? "empty"}: ${outcome.failure?.detail ?? "no usable idea"}`,
+      },
+    };
+  }
+
+  return run("deck.analyze", corpusInput, [], excludeTitles);
 }
 
 /** Take one idea further, same policy shape, same fallback contract. */

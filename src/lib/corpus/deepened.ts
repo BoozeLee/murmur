@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { IdeaDraftSchema } from "../schema";
 import type { IdeaDraft } from "../schema";
+import { IdeaDraftSchema } from "../schema";
 import { SEED_IDEAS } from "./seeds";
 
 /**

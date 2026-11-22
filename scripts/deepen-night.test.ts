@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEEPENED_LIMIT } from "../src/lib/corpus/deepened";
 import { SEED_IDEAS } from "../src/lib/corpus/seeds";
-import { IdeaDraftSchema } from "../src/lib/schema";
 import type { IdeaDraft } from "../src/lib/schema";
+import { IdeaDraftSchema } from "../src/lib/schema";
 
 /**
  * The nightly wrapper has to be able to say "there is nothing left to write"

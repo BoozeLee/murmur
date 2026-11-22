@@ -1,12 +1,12 @@
-import { ideaJsonSchema } from "../schema";
-import type { Idea, IdeaDraft } from "../schema";
 import {
-  PROMPT_VERSION,
-  TOOL_POLICY_VERSION,
   correctionPrompt,
+  PROMPT_VERSION,
   systemPrompt,
+  TOOL_POLICY_VERSION,
   userPrompt,
 } from "../prompts";
+import type { Idea, IdeaDraft } from "../schema";
+import { ideaJsonSchema } from "../schema";
 import { parseDrafts } from "./parse";
 import type {
   GenerateContext,
@@ -197,9 +197,7 @@ function mergeStats(base: ProviderStats, add: ProviderStats): ProviderStats {
   };
 }
 
-export function createOllamaProvider(
-  options: OllamaOptions = defaultOllamaOptions,
-): IdeaProvider {
+export function createOllamaProvider(options: OllamaOptions = defaultOllamaOptions): IdeaProvider {
   /**
    * One idea per call, `count` times.
    *
@@ -232,7 +230,7 @@ export function createOllamaProvider(
         },
       ];
 
-      let callStats = zeroStats();
+      const callStats = zeroStats();
       let produced: IdeaDraft[] = [];
       let lastReason = "";
       let repairs = 0;

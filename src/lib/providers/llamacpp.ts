@@ -1,12 +1,12 @@
-import { ideaJsonSchema } from "../schema";
-import type { Idea, IdeaDraft } from "../schema";
 import {
-  PROMPT_VERSION,
-  TOOL_POLICY_VERSION,
   correctionPrompt,
+  PROMPT_VERSION,
   systemPrompt,
+  TOOL_POLICY_VERSION,
   userPrompt,
 } from "../prompts";
+import type { Idea, IdeaDraft } from "../schema";
+import { ideaJsonSchema } from "../schema";
 import { parseDrafts } from "./parse";
 import type {
   GenerateContext,
@@ -397,7 +397,7 @@ export function createLlamacppProvider(
         },
       ];
 
-      let callStats = zeroStats();
+      const callStats = zeroStats();
       let produced: IdeaDraft[] = [];
       let lastReason = "";
       let repairs = 0;

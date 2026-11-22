@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SEED_IDEAS } from "./corpus/seeds";
 import { qualityIssues } from "./quality";
-import { IdeaDraftSchema, type IdeaDraft } from "./schema";
+import { type IdeaDraft, IdeaDraftSchema } from "./schema";
 
 const SEED = SEED_IDEAS[0];
 if (SEED === undefined) throw new Error("corpus is empty");
@@ -69,7 +69,9 @@ describe("qualityIssues", () => {
     const issues = qualityIssues(
       draft({ prompt: `${clause} and ${clause} so the painter sees ${clause} in the light.` }),
     );
-    expect(issues.some((i) => i.startsWith("prompt:") && i.includes("repeat three times"))).toBe(true);
+    expect(issues.some((i) => i.startsWith("prompt:") && i.includes("repeat three times"))).toBe(
+      true,
+    );
   });
 
   it("leaves a field that merely repeats itself twice", () => {
@@ -83,7 +85,9 @@ describe("qualityIssues", () => {
   });
 
   it("passes every idea in the curated corpus", () => {
-    const offenders = SEED_IDEAS.filter((idea) => qualityIssues(idea).length > 0).map((i) => i.title);
+    const offenders = SEED_IDEAS.filter((idea) => qualityIssues(idea).length > 0).map(
+      (i) => i.title,
+    );
     expect(offenders).toEqual([]);
   });
 });

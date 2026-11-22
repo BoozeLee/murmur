@@ -10,11 +10,11 @@ Absence of evidence is not evidence of absence, and the two produce the same lin
 
 ## The contract
 
-| Exit | Meaning |
-|---|---|
-| `0` | clean — every subject was examined, nothing was found |
-| `1` | findings — a subject was examined and it is wrong |
-| `2` | inconclusive — a subject could not be read, or there was none to read |
+| Exit | Meaning                                                               |
+| ---- | --------------------------------------------------------------------- |
+| `0`  | clean — every subject was examined, nothing was found                 |
+| `1`  | findings — a subject was examined and it is wrong                     |
+| `2`  | inconclusive — a subject could not be read, or there was none to read |
 
 A gate that returns 2 for everything satisfies "never falsely passes" and is
 useless, so the contract is not one-sided: a clean subject must give 0 and a
@@ -31,12 +31,12 @@ the gate, which is a dependency in the wrong direction. The checksums are what
 keep the copies honest: a divergence shows up as a checksum that no longer
 matches, not as a silent behaviour change in one repository.
 
-| File | md5 | Lines |
-|---|---|---|
-| `scripts/check-home-paths.sh` | `09997aab74a0403710d5bfa0e7cfd495` | 271 |
-| `scripts/check-workflows-can-fail.sh` | `631ef2b98019f609062def0f1ed7d58a` | 355 |
-| `scripts/check-gates-are-honest.sh` | `1bc58cf2417e55833bd8be54fff6d565` | 979 |
-| `scripts/verify-gates.sh` | `a24889538e2ba985d2527597c1bdd399` | 97 |
+| File                                  | md5                                | Lines |
+| ------------------------------------- | ---------------------------------- | ----- |
+| `scripts/check-home-paths.sh`         | `09997aab74a0403710d5bfa0e7cfd495` | 271   |
+| `scripts/check-workflows-can-fail.sh` | `631ef2b98019f609062def0f1ed7d58a` | 355   |
+| `scripts/check-gates-are-honest.sh`   | `1bc58cf2417e55833bd8be54fff6d565` | 979   |
+| `scripts/verify-gates.sh`             | `a24889538e2ba985d2527597c1bdd399` | 97    |
 
 `.gate-manifest` is deliberately **not** in that table. It names the gates of the
 repository it sits in and declares that repository's entry point, so it is
@@ -57,7 +57,7 @@ md5sum scripts/check-home-paths.sh scripts/check-workflows-can-fail.sh \
        scripts/check-gates-are-honest.sh scripts/verify-gates.sh
 ```
 
-`check-gates-are-honest.sh` also checks this table — the checksum *and* the line
+`check-gates-are-honest.sh` also checks this table — the checksum _and_ the line
 count of every file it names, and reports a row this repository does not carry as
 absent rather than wrong. It is inside the auditor rather than a script of its own
 because a separate script would be a gate the manifest does not name and the
@@ -87,7 +87,7 @@ verified by removing the guard and watching a control go red before restoring it
 
 The meta-gate's own controls were the last ones repaired, and they are the
 clearest case of a control that was green without testing anything. One of them,
-`refuses-a-run-but-unregistered-gate`, was passing because the *previous* control
+`refuses-a-run-but-unregistered-gate`, was passing because the _previous_ control
 had left its gate in the runner array — and an unregistered gate is exactly what
 that leftover produces. Isolated on a clean baseline it returned 0. Another,
 `refuses-a-missing-gate`, asserted only an exit code, and that code was available

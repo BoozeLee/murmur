@@ -1,5 +1,5 @@
-import type { Category, IdeaDraft, Tag } from "./schema";
 import { SEED_IDEAS } from "./corpus/seeds";
+import type { Category, IdeaDraft, Tag } from "./schema";
 
 /**
  * The deterministic core.

@@ -1,11 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-
-import { CATEGORIES, TAGS } from "./schema";
-import { SEED_IDEAS } from "./corpus/seeds";
+import { describe, expect, it } from "vitest";
 import { DEEPENED_LIMIT } from "./corpus/deepened";
+import { SEED_IDEAS } from "./corpus/seeds";
+import { CATEGORIES, TAGS } from "./schema";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -100,13 +99,8 @@ export function declaredDefaults(sources: Map<string, string>): Map<string, stri
  * MURMUR_LLAMACPP_CTX, so the variable was loaded into the environment and
  * ignored. This is the rule that would have said so.
  */
-export function documentedButUnread(
-  doc: string,
-  sources: Map<string, string>,
-): string[] {
-  return [...documentedVars(doc).keys()].filter(
-    (name) => !isRead(name, sources),
-  );
+export function documentedButUnread(doc: string, sources: Map<string, string>): string[] {
+  return [...documentedVars(doc).keys()].filter((name) => !isRead(name, sources));
 }
 
 /** Whether the name appears in a read position anywhere. */
@@ -129,10 +123,7 @@ function isRead(name: string, sources: Map<string, string>): boolean {
  */
 const SHELL_OWNS = new Set(["PATH", "HOME", "BASH_SOURCE"]);
 
-export function readButUndocumented(
-  doc: string,
-  sources: Map<string, string>,
-): string[] {
+export function readButUndocumented(doc: string, sources: Map<string, string>): string[] {
   const documented = new Set(documentedVars(doc).keys());
   const read = new Set<string>();
   for (const [path, text] of sources) {
@@ -166,10 +157,7 @@ export function readButUndocumented(
  * point: one stale number is a lie, two disagreeing numbers are a bug waiting
  * for the day they are read by different programs.
  */
-export function envValueDrift(
-  doc: string,
-  defaults: Map<string, string[]>,
-): string[] {
+export function envValueDrift(doc: string, defaults: Map<string, string[]>): string[] {
   const problems: string[] = [];
   for (const [name, value] of documentedVars(doc)) {
     for (const candidate of defaults.get(name) ?? []) {
@@ -195,7 +183,17 @@ export function envValueDrift(
  * right claim to make, and the check is that it stays true.
  */
 const NUMBER_WORDS = [
-  "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
 ];
 
 /**
@@ -231,7 +229,9 @@ export function readmeDrift(readme: string): string[] {
   const problems: string[] = [];
 
   if (!readme.includes(`${SEED_IDEAS.length} hand-written`)) {
-    problems.push(`README does not say the corpus starts at ${SEED_IDEAS.length} hand-written cards`);
+    problems.push(
+      `README does not say the corpus starts at ${SEED_IDEAS.length} hand-written cards`,
+    );
   }
   if (!readme.includes(`capped at ${DEEPENED_LIMIT} cards`)) {
     problems.push(`README does not say the pool is capped at ${DEEPENED_LIMIT} cards`);
@@ -325,7 +325,6 @@ describe("the docs and the code agree", () => {
 });
 
 describe("the doc checks can fail", () => {
-  const good = "MURMUR_DEEPEN_COUNT=12\n";
   const sources = new Map([["a.ts", 'process.env.MURMUR_DEEPEN_COUNT ?? "12"']]);
 
   it("catches a documented value the code no longer defaults to", () => {
@@ -398,7 +397,8 @@ describe("the doc checks can fail", () => {
   });
 
   it("reads a spelled-out count, not just digits", () => {
-    const spelled = `${SEED_IDEAS.length} hand-written pool itself is capped at ${DEEPENED_LIMIT} cards ` +
+    const spelled =
+      `${SEED_IDEAS.length} hand-written pool itself is capped at ${DEEPENED_LIMIT} cards ` +
       `${NUMBER_WORDS[CATEGORIES.length]} categories, ${TAGS.length} tags`;
     expect(readmeDrift(spelled)).toEqual([]);
   });

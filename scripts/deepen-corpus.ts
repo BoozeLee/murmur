@@ -1,14 +1,14 @@
 import {
-  DEEPENED_LIMIT,
   allIdeas,
   appendDeepened,
+  DEEPENED_LIMIT,
   generatedCount,
   poolIsFull,
 } from "../src/lib/corpus/deepened";
 import { armIdleTimer } from "../src/lib/model-server";
-import { CATEGORIES } from "../src/lib/schema";
-import { run } from "../src/lib/router";
 import { defaultLlamacppOptions } from "../src/lib/providers/llamacpp";
+import { run } from "../src/lib/router";
+import { CATEGORIES } from "../src/lib/schema";
 
 /**
  * The overnight deepening run.
@@ -46,9 +46,7 @@ function has(name: string): boolean {
 if (has("preflight")) {
   const pool = allIdeas().length;
   const full = poolIsFull();
-  console.log(
-    JSON.stringify({ pool, generated: generatedCount(), limit: DEEPENED_LIMIT, full }),
-  );
+  console.log(JSON.stringify({ pool, generated: generatedCount(), limit: DEEPENED_LIMIT, full }));
   process.exit(full ? PREFLIGHT_POOL_FULL : 0);
 }
 

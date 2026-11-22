@@ -134,7 +134,10 @@ describe("modelServerHealthy", () => {
   });
 
   it("reports healthy only on a 200 whose body says ok", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response('{"status":"ok"}', { status: 200 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response('{"status":"ok"}', { status: 200 })),
+    );
     expect(await modelServerHealthy("http://x")).toBe(true);
   });
 

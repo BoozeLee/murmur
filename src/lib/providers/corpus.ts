@@ -1,5 +1,6 @@
-import { drawCurated, fuse, hashString, mulberry32, pick } from "../engine";
+import { rankByBrief } from "../brief";
 import { allIdeas } from "../corpus/deepened";
+import { drawCurated, fuse, hashString, mulberry32, pick } from "../engine";
 import type { Idea, IdeaDraft } from "../schema";
 import type { GenerateContext, IdeaProvider, ProviderOutcome } from "./types";
 
@@ -32,6 +33,7 @@ export const corpusProvider: IdeaProvider = {
     const salt = [
       request.category ?? "any",
       (request.tags ?? []).join(","),
+      request.brief ?? "",
       String(request.temperature),
       context.taskClass,
     ].join("|");
@@ -40,6 +42,14 @@ export const corpusProvider: IdeaProvider = {
       ...(request.tags === undefined ? {} : { tags: request.tags }),
     };
     const baseSeed = hashString(salt + context.excludeTitles.join("|"));
+    // A brief narrows the pool before the seeded shuffle. Ranking is stable, so
+    // the same words always favour the same cards; the shuffle still makes a
+    // second draw differ.
+    const wholePool = allIdeas();
+    const pool =
+      request.brief === undefined || request.brief.trim().length === 0
+        ? wholePool
+        : rankByBrief(wholePool, request.brief).slice(0, 12);
 
     const ideas: Idea[] = [];
     const seen = new Set(context.excludeTitles);
@@ -51,7 +61,7 @@ export const corpusProvider: IdeaProvider = {
         seed: baseSeed + index * 7919,
         exclude: [...seen],
         count: 1,
-        pool: allIdeas(),
+        pool,
       });
       const draft = draw.drafts[0];
       if (draft === undefined) break;
@@ -63,14 +73,24 @@ export const corpusProvider: IdeaProvider = {
       return {
         ideas: [],
         failure: { kind: "empty", detail: "every matching corpus idea was already shown" },
-        stats: { latencyMs: Date.now() - started, inputTokens: 0, outputTokens: 0, validationFailures: 0 },
+        stats: {
+          latencyMs: Date.now() - started,
+          inputTokens: 0,
+          outputTokens: 0,
+          validationFailures: 0,
+        },
       };
     }
 
     return {
       ideas,
       failure: null,
-      stats: { latencyMs: Date.now() - started, inputTokens: 0, outputTokens: 0, validationFailures: 0 },
+      stats: {
+        latencyMs: Date.now() - started,
+        inputTokens: 0,
+        outputTokens: 0,
+        validationFailures: 0,
+      },
     };
   },
 

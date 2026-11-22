@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createLlamacppProvider } from "./llamacpp";
-import { defaultLlamacppOptions } from "./llamacpp";
-import { GenerateRequestSchema, IdeaDraftSchema, ideaJsonSchema } from "../schema";
 import type { IdeaDraft } from "../schema";
+import { GenerateRequestSchema, IdeaDraftSchema, ideaJsonSchema } from "../schema";
+import { createLlamacppProvider, defaultLlamacppOptions } from "./llamacpp";
 import type { GenerateContext } from "./types";
 
 /**
@@ -17,7 +16,8 @@ const DRAFT: IdeaDraft = IdeaDraftSchema.parse({
   tags: ["engineered", "mystic"],
   concept:
     "A machine hall built to cast objects nobody has imagined yet, its moulds empty and cooling.",
-  tension: "Precision against patience — the hall is built to make a thing that does not exist yet.",
+  tension:
+    "Precision against patience — the hall is built to make a thing that does not exist yet.",
   light: "One sodium lamp at the far end, everything else lit by the glow of cold metal.",
   palette: ["cold iron", "sodium orange", "verdigris"],
   composition: "One-point perspective down the casting aisle, moulds receding left and right.",
@@ -37,11 +37,13 @@ interface StreamShape {
  * `parts` splits the answer across several events the way a real stream does.
  */
 function sseBody(content: string, over: StreamShape = {}, parts = 1): string {
-  const usage = over.usage === undefined ? { prompt_tokens: 480, completion_tokens: 210 } : over.usage;
+  const usage =
+    over.usage === undefined ? { prompt_tokens: 480, completion_tokens: 210 } : over.usage;
   const size = Math.max(1, Math.ceil(content.length / parts));
   const slices = [...content.matchAll(new RegExp(`.{1,${size}}`, "gs"))].map((m) => m[0]);
   const events = slices.map(
-    (slice) => `data: ${JSON.stringify({ choices: [{ delta: { content: slice }, finish_reason: null }] })}`,
+    (slice) =>
+      `data: ${JSON.stringify({ choices: [{ delta: { content: slice }, finish_reason: null }] })}`,
   );
   events.push(
     `data: ${JSON.stringify({
@@ -124,10 +126,7 @@ describe("llamacpp provider", () => {
 
   it("rejects an easel line that only restates the title", async () => {
     const echo = { ...DRAFT, prompt: DRAFT.title.toLowerCase() };
-    const { calls } = stubFetch(
-      sseBody(JSON.stringify(echo)),
-      sseBody(JSON.stringify(DRAFT)),
-    );
+    const { calls } = stubFetch(sseBody(JSON.stringify(echo)), sseBody(JSON.stringify(DRAFT)));
     await provider.generate(context());
 
     const repair = calls[1] as { messages: { content: string }[] };
@@ -136,7 +135,10 @@ describe("llamacpp provider", () => {
 
   it("does not retry output that hit the token ceiling", async () => {
     const { calls } = stubFetch(
-      sseBody('{"title":"cut off', { finishReason: "length", usage: { prompt_tokens: 480, completion_tokens: 1200 } }),
+      sseBody('{"title":"cut off', {
+        finishReason: "length",
+        usage: { prompt_tokens: 480, completion_tokens: 1200 },
+      }),
     );
     const outcome = await provider.generate(context());
 

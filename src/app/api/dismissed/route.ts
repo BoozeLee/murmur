@@ -17,9 +17,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     assertSameOrigin(request);
     const body = await readJson(request);
-    const parsed = z
-      .object({ title: TITLE, dismissed: z.boolean().default(true) })
-      .safeParse(body);
+    const parsed = z.object({ title: TITLE, dismissed: z.boolean().default(true) }).safeParse(body);
     if (!parsed.success) {
       throw new RequestError(
         `bad request: ${parsed.error.issues

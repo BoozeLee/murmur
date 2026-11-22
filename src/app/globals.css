@@ -1,62 +1,551 @@
 @import "tailwindcss";
 
 /*
- * One dark surface, tuned for looking at for an hour while painting. Colours are
- * deliberately desaturated so the palette names on a card are the loudest thing
- * on the page.
+ * The palette is sampled from the painting that started this deck: near-black
+ * olive, umber, sage, ochre, deep teal and a dry sand highlight. Everything here
+ * is a tint or shade of those eight colours, so the site reads like the same
+ * canvas the ideas are about.
  */
 @theme {
-  --color-ink-900: #0b0a10;
-  --color-ink-800: #12111a;
-  --color-ink-700: #1b1926;
-  --color-ink-600: #262335;
-  --color-ink-500: #3a3550;
-  --color-mist-400: #8d86a8;
-  --color-mist-200: #cfc8de;
-  --color-phosphor: #8fd8c8;
-  --color-ember: #d8a87f;
+  --color-canvas: #232419;
+  --color-canvas-sunk: #1c1d14;
+  --color-canvas-raised: #2b2b20;
+  --color-canvas-lifted: #343323;
+  --color-umber: #47391e;
+  --color-olive: #5e512c;
+  --color-sage: #5f654d;
+  --color-ochre: #8f6f2c;
+  --color-teal: #2d5a50;
+  --color-forest: #314534;
+  --color-sand: #a18d5a;
+  --color-parchment: #d8c9a3;
+  --color-glow: #79b2a3;
+
+  /* Legacy aliases, kept so any untouched class still resolves. */
+  --color-ink-900: #232419;
+  --color-ink-800: #2b2b20;
+  --color-ink-700: #343323;
+  --color-ink-600: #47391e;
+  --color-ink-500: #5e512c;
+  --color-mist-400: #a18d5a;
+  --color-mist-200: #d8c9a3;
+  --color-phosphor: #79b2a3;
+  --color-ember: #c58a52;
+
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
-html,
-body {
-  background-color: var(--color-ink-900);
-  color: var(--color-mist-200);
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: var(--color-canvas);
+  }
+
+  body {
+    min-height: 100dvh;
+    color: var(--color-parchment);
+    background:
+      radial-gradient(
+        72rem 44rem at 10% -12%,
+        color-mix(in oklab, var(--color-teal) 34%, transparent),
+        transparent 68%
+      ),
+      radial-gradient(
+        60rem 40rem at 94% 2%,
+        color-mix(in oklab, var(--color-ochre) 20%, transparent),
+        transparent 64%
+      ),
+      linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-sunk) 100%);
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--color-olive) var(--color-canvas-sunk);
+  }
+
+  /* A fixed grain layer: the whole page sits on woven cloth, not glass. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.13;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-ochre) 42%, transparent);
+    color: var(--color-parchment);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-glow);
+    outline-offset: 3px;
+    border-radius: 0.375rem;
+  }
 }
 
-body {
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
+@layer components {
+  .type-display {
+    font-family: var(--font-display);
+  }
+
+  .label-caps {
+    font-size: 0.625rem;
+    line-height: 1rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--color-sand) 82%, transparent);
+  }
+
+  .studio-panel {
+    border: 1px solid color-mix(in oklab, var(--color-sage) 45%, transparent);
+    background: linear-gradient(
+      155deg,
+      color-mix(in oklab, var(--color-canvas-raised) 92%, var(--color-olive)) 0%,
+      var(--color-canvas-raised) 58%,
+      var(--color-canvas) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--color-parchment) 7%, transparent),
+      0 28px 70px -40px rgb(0 0 0 / 0.9);
+  }
+
+  .studio-panel-soft {
+    border: 1px solid color-mix(in oklab, var(--color-sage) 28%, transparent);
+    background: color-mix(in oklab, var(--color-canvas-raised) 78%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-parchment) 4%, transparent);
+  }
+
+  .rule-brush {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      var(--color-ochre) 0%,
+      color-mix(in oklab, var(--color-sand) 70%, transparent) 46%,
+      transparent 100%
+    );
+  }
+
+  .button-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid color-mix(in oklab, var(--color-sand) 45%, transparent);
+    background: linear-gradient(180deg, var(--color-ochre), var(--color-olive));
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-parchment);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-parchment) 16%, transparent);
+    transition:
+      filter 180ms ease,
+      transform 180ms ease;
+  }
+
+  .button-primary:hover:not(:disabled) {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  .button-quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid color-mix(in oklab, var(--color-sage) 50%, transparent);
+    background: color-mix(in oklab, var(--color-canvas) 45%, transparent);
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+    color: color-mix(in oklab, var(--color-parchment) 86%, transparent);
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+
+  .button-quiet:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--color-sand) 55%, transparent);
+    background: color-mix(in oklab, var(--color-canvas-lifted) 70%, transparent);
+  }
+
+  .button-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: color-mix(in oklab, var(--color-sand) 88%, transparent);
+    transition: color 180ms ease;
+  }
+
+  .button-ghost:hover:not(:disabled) {
+    color: var(--color-parchment);
+  }
 }
 
-/* A very slow drift so a full-screen deck does not feel like a dead page. */
-@keyframes murmur-drift {
-  0% {
-    opacity: 0.35;
+@keyframes wash-drift {
+  0%,
+  100% {
     transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.18;
   }
   50% {
-    opacity: 0.5;
-    transform: translate3d(0, -1.5%, 0) scale(1.04);
-  }
-  100% {
-    opacity: 0.35;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(2%, -3%, 0) scale(1.07);
+    opacity: 0.3;
   }
 }
 
-.murmur-glow {
-  animation: murmur-drift 24s ease-in-out infinite;
+.wash {
+  animation: wash-drift 28s ease-in-out infinite;
   will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .murmur-glow {
+  .wash {
     animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
-::selection {
-  background: color-mix(in oklab, var(--color-phosphor) 30%, transparent);
+/*
+ * Graffiti wall layer. All of it is decorative and all of it stops moving when
+ * the painter asks for reduced motion — the last rule in the file owns that.
+ */
+.wall-art-scrawl {
+  background-image: url("/art/murmur-scrawl.svg");
+  background-size: contain;
+  background-position: center;
+  opacity: 0.16;
+  mix-blend-mode: soft-light;
+  animation: scrawl-drift 46s ease-in-out infinite alternate;
+}
+
+@keyframes scrawl-drift {
+  0% {
+    transform: translate3d(-2%, 0, 0) rotate(-1.2deg);
+    opacity: 0.1;
+  }
+  100% {
+    transform: translate3d(3%, -2%, 0) rotate(1deg);
+    opacity: 0.2;
+  }
+}
+
+.wall-glow {
+  transform-origin: 1180px 170px;
+  animation: spray-breathe 16s ease-in-out infinite;
+}
+
+@keyframes spray-breathe {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.09);
+    opacity: 1;
+  }
+}
+
+.wall-eclipse-ring {
+  transform-origin: 1180px 170px;
+  animation: ring-turn 90s linear infinite;
+}
+
+@keyframes ring-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wall-vine {
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation:
+    vine-draw 4.5s ease-out 0.3s forwards,
+    vine-sway 11s ease-in-out 5s infinite alternate;
+}
+
+@keyframes vine-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes vine-sway {
+  from {
+    transform: translateX(-5px);
+  }
+  to {
+    transform: translateX(5px);
+  }
+}
+
+.wall-leaves {
+  animation: spray-breathe 13s ease-in-out 2s infinite alternate;
+  transform-origin: center;
+}
+
+.wall-drip {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: drip-fall 8s ease-in infinite;
+}
+
+.wall-drip-b {
+  animation-delay: -2.7s;
+}
+.wall-drip-c {
+  animation-delay: -5.1s;
+}
+
+@keyframes drip-fall {
+  0% {
+    stroke-dashoffset: 90;
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.8;
+  }
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 0.6;
+  }
+  100% {
+    stroke-dashoffset: -40;
+    opacity: 0;
+  }
+}
+
+.tag-scrawl {
+  stroke-dasharray: 520;
+  stroke-dashoffset: 520;
+  animation: tag-draw 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+}
+
+.tag-scrawl-second {
+  animation-delay: 0.9s;
+}
+
+@keyframes tag-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.tag-drip {
+  animation: tag-drip-drop 5.5s ease-in infinite;
+}
+.tag-drip-b {
+  animation-delay: -1.8s;
+}
+.tag-drip-c {
+  animation-delay: -3.6s;
+}
+
+@keyframes tag-drip-drop {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(22px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wall-art-scrawl,
+  .wall-glow,
+  .wall-eclipse-ring,
+  .wall-vine,
+  .wall-leaves,
+  .wall-drip,
+  .tag-scrawl,
+  .tag-drip {
+    animation: none !important;
+  }
+  .wall-vine,
+  .wall-drip,
+  .tag-scrawl {
+    stroke-dashoffset: 0;
+  }
+  .wall-glow,
+  .wall-leaves,
+  .wall-drip,
+  .tag-drip {
+    opacity: 0.5;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Living Murmur — the whole page as one breathing artwork.
+ * All continuous motion uses transform/opacity so it stays on the compositor.
+ * ------------------------------------------------------------------------- */
+.living-murmur {
+  contain: layout paint;
+}
+
+.living-scrawl {
+  background-image: url("/art/murmur-scrawl.svg");
+  background-size: contain;
+  background-position: center;
+  opacity: 0.18;
+  mix-blend-mode: soft-light;
+  animation: scrawl-drift 52s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.living-arch {
+  stroke-dasharray: 1300;
+  stroke-dashoffset: 1300;
+  animation:
+    living-draw 3.8s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    living-arch-breathe 14s ease-in-out 4s infinite alternate;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes living-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes living-arch-breathe {
+  from {
+    opacity: 0.55;
+    transform: scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.006);
+  }
+}
+
+.living-doorway {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: doorway-breathe 9s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes doorway-breathe {
+  from {
+    opacity: 0.55;
+    transform: scaleY(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1.01);
+  }
+}
+
+.living-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spray-breathe 15s ease-in-out infinite;
+}
+
+.living-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ring-turn 120s linear infinite;
+}
+
+.living-filigree {
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation:
+    living-draw 6s ease-out 0.4s forwards,
+    filigree-sway 13s ease-in-out 7s infinite alternate;
+}
+
+@keyframes filigree-sway {
+  from {
+    transform: translateX(-4px);
+  }
+  to {
+    transform: translateX(4px);
+  }
+}
+
+.living-leaves {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spray-breathe 17s ease-in-out 2s infinite alternate;
+}
+
+.living-spray {
+  animation: spray-breathe 8s ease-in-out infinite alternate;
+}
+
+.living-drip {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: drip-fall 9s ease-in infinite;
+}
+.living-drip-b {
+  animation-delay: -3.1s;
+}
+.living-drip-c {
+  animation-delay: -6.2s;
+}
+
+.living-scrim {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(35 36 25 / 0.08) 0%,
+      rgb(35 36 25 / 0.32) 46%,
+      rgb(28 29 20 / 0.66) 100%
+    ),
+    radial-gradient(70rem 40rem at 50% 0%, transparent 30%, rgb(35 36 25 / 0.18) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .living-murmur canvas {
+    display: none;
+  }
+  .living-scrawl,
+  .living-arch,
+  .living-doorway,
+  .living-glow,
+  .living-ring,
+  .living-filigree,
+  .living-leaves,
+  .living-spray,
+  .living-drip {
+    animation: none !important;
+  }
+  .living-arch,
+  .living-filigree,
+  .living-drip {
+    stroke-dashoffset: 0;
+  }
+  .living-doorway,
+  .living-glow,
+  .living-leaves {
+    opacity: 0.5;
+  }
 }

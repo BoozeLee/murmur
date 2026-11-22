@@ -1,5 +1,5 @@
-import type { GenerateRequest, Idea, IdeaDraft } from "../schema";
 import { PROMPT_VERSION, TOOL_POLICY_VERSION } from "../prompts";
+import type { GenerateRequest, Idea, IdeaDraft } from "../schema";
 
 /**
  * The provider boundary.
@@ -40,7 +40,7 @@ export interface GenerationTelemetry {
  * model-authored cards into the curated corpus. It is a separate class because
  * it is the only task allowed to prefer the slow 30B runner.
  */
-export type TaskClass = "deck.draw" | "deck.expand" | "corpus.deepen";
+export type TaskClass = "deck.draw" | "deck.expand" | "deck.analyze" | "corpus.deepen";
 
 export interface GenerateContext {
   request: GenerateRequest;

@@ -2,18 +2,18 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { IdeaDraft } from "../schema";
+import { IdeaDraftSchema } from "../schema";
 import {
-  DEEPENED_LIMIT,
   allIdeas,
   appendDeepened,
+  DEEPENED_LIMIT,
   deepenedPath,
   generatedCount,
   loadDeepened,
   poolIsFull,
 } from "./deepened";
 import { SEED_IDEAS } from "./seeds";
-import { IdeaDraftSchema } from "../schema";
-import type { IdeaDraft } from "../schema";
 
 /**
  * The generated half of the corpus is written by an unattended job, so these
@@ -92,10 +92,7 @@ describe("deepened corpus", () => {
     appendDeepened([draft("Mould Room")], meta);
     appendDeepened([draft("Casting Hall")], meta);
 
-    expect(loadDeepened().map((card) => card.idea.title)).toEqual([
-      "Mould Room",
-      "Casting Hall",
-    ]);
+    expect(loadDeepened().map((card) => card.idea.title)).toEqual(["Mould Room", "Casting Hall"]);
   });
 
   it("drops records that no longer satisfy the contract instead of failing", () => {

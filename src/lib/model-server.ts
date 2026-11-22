@@ -86,19 +86,14 @@ export async function modelServerHealthy(url: string): Promise<boolean> {
 
 function runSystemctl(args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
-    execFile(
-      "systemctl",
-      args,
-      { timeout: 20_000, env: process.env },
-      (error, _stdout, stderr) => {
-        if (error === null) {
-          resolve();
-          return;
-        }
-        const detail = stderr.trim();
-        reject(new Error(`systemctl ${args.join(" ")} failed: ${detail || error.message}`));
-      },
-    );
+    execFile("systemctl", args, { timeout: 20_000, env: process.env }, (error, _stdout, stderr) => {
+      if (error === null) {
+        resolve();
+        return;
+      }
+      const detail = stderr.trim();
+      reject(new Error(`systemctl ${args.join(" ")} failed: ${detail || error.message}`));
+    });
   });
 }
 
@@ -137,9 +132,7 @@ export async function armIdleTimer(overrides: Partial<Deps> = {}): Promise<boole
  *
  * Throws when the server cannot be made healthy inside the boot timeout.
  */
-export async function ensureModelServer(
-  overrides: Partial<Deps> = {},
-): Promise<ModelServerStatus> {
+export async function ensureModelServer(overrides: Partial<Deps> = {}): Promise<ModelServerStatus> {
   const deps: Deps = { ...defaultDeps(), ...overrides };
   const startedAt = deps.now();
 
@@ -167,9 +160,7 @@ export async function ensureModelServer(
     }
   }
 
-  throw new Error(
-    `${deps.unit} was not healthy after ${Math.round(deps.bootTimeoutMs / 1000)}s`,
-  );
+  throw new Error(`${deps.unit} was not healthy after ${Math.round(deps.bootTimeoutMs / 1000)}s`);
 }
 
 /**

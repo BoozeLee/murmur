@@ -1,8 +1,10 @@
 "use client";
 
+import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 
-import { CATEGORIES, CATEGORY_LABELS, TAGS, type Category, type Tag } from "@/lib/schema";
+import { useI18n } from "@/components/locale-provider";
+import { CATEGORIES, type Category, TAGS, type Tag } from "@/lib/schema";
 import { MOOD, PILLARS } from "@/lib/vocabulary";
 
 export interface DeckFilter {
@@ -25,13 +27,11 @@ export function FilterBar({
   disabled: boolean;
 }): React.ReactElement {
   const [showAllTags, setShowAllTags] = useState(false);
-  const visibleTags = showAllTags
-    ? TAGS
-    : TAGS.filter((tag) => FAVOURITES.includes(tag));
+  const visibleTags = showAllTags ? TAGS : FAVOURITES;
+  const { t, categoryLabel, tagLabel } = useI18n();
 
   function toggleTag(tag: Tag): void {
-    const has = filter.tags.includes(tag);
-    if (has) {
+    if (filter.tags.includes(tag)) {
       onChange({ ...filter, tags: filter.tags.filter((other) => other !== tag) });
       return;
     }
@@ -40,51 +40,63 @@ export function FilterBar({
   }
 
   return (
-    <section
-      aria-label="Filters"
-      className="space-y-3 rounded-2xl border border-ink-700 bg-ink-800/40 p-4"
-    >
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[0.65rem] uppercase tracking-[0.18em] text-mist-400/70">Kind</span>
-        <FilterChip active={filter.category === undefined} disabled={disabled} onClick={() => onChange({ ...filter, category: undefined })}>
-          anything
-        </FilterChip>
-        {CATEGORIES.map((category) => (
-          <FilterChip
-            key={category}
-            active={filter.category === category}
-            disabled={disabled}
-            onClick={() => onChange({ ...filter, category })}
-          >
-            {CATEGORY_LABELS[category]}
-          </FilterChip>
-        ))}
+    <section aria-label="Filters" className="studio-panel-soft rounded-2xl p-4 sm:p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <SlidersHorizontal className="h-3.5 w-3.5 text-sand" aria-hidden />
+        <span className="label-caps">{t("tuneTheDeck")}</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[0.65rem] uppercase tracking-[0.18em] text-mist-400/70">
-          Mood &amp; subject
-          <span className="ml-1 normal-case tracking-normal text-mist-400/50">
-            {filter.tags.length > 0 ? `${filter.tags.length}/${MAX_TAGS}` : ""}
-          </span>
-        </span>
-        {visibleTags.map((tag) => (
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="label-caps mr-1">{t("kind")}</span>
           <FilterChip
-            key={tag}
-            active={filter.tags.includes(tag)}
+            active={filter.category === undefined}
             disabled={disabled}
-            onClick={() => toggleTag(tag)}
+            onClick={() => onChange({ ...filter, category: undefined })}
           >
-            {tag}
+            {t("anything")}
           </FilterChip>
-        ))}
-        <button
-          type="button"
-          onClick={() => setShowAllTags((open) => !open)}
-          className="rounded-full border border-dashed border-ink-500 px-2 py-0.5 text-[0.7rem] text-mist-400/80 transition hover:text-mist-200"
-        >
-          {showAllTags ? "fewer" : "more"}
-        </button>
+          {CATEGORIES.map((category) => (
+            <FilterChip
+              key={category}
+              active={filter.category === category}
+              disabled={disabled}
+              onClick={() => onChange({ ...filter, category })}
+            >
+              {categoryLabel(category)}
+            </FilterChip>
+          ))}
+        </div>
+
+        <div className="rule-brush opacity-60" />
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="label-caps mr-1">
+            {t("moodSubject")}
+            {filter.tags.length > 0 ? (
+              <span className="ml-1 normal-case tracking-normal text-sand/60">
+                {filter.tags.length}/{MAX_TAGS}
+              </span>
+            ) : null}
+          </span>
+          {visibleTags.map((tag) => (
+            <FilterChip
+              key={tag}
+              active={filter.tags.includes(tag)}
+              disabled={disabled}
+              onClick={() => toggleTag(tag)}
+            >
+              {tagLabel(tag)}
+            </FilterChip>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowAllTags((open) => !open)}
+            className="rounded-full border border-dashed border-sage/40 px-2 py-0.5 text-[0.7rem] text-sand/80 transition hover:border-sand/50 hover:text-parchment"
+          >
+            {showAllTags ? t("fewer") : t("more")}
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -109,8 +121,8 @@ function FilterChip({
       aria-pressed={active}
       className={
         active
-          ? "rounded-full border border-phosphor/40 bg-phosphor/15 px-2.5 py-0.5 text-[0.72rem] text-phosphor transition"
-          : "rounded-full border border-ink-500 px-2.5 py-0.5 text-[0.72rem] text-mist-400 transition hover:border-ink-500 hover:text-mist-200 disabled:opacity-40"
+          ? "rounded-full border border-ochre/60 bg-ochre/15 px-2.5 py-0.5 text-[0.72rem] text-parchment shadow-[inset_0_0_0_1px_rgba(161,141,90,0.08)] transition"
+          : "rounded-full border border-sage/35 bg-canvas/40 px-2.5 py-0.5 text-[0.72rem] text-sand/80 transition hover:border-sand/50 hover:text-parchment disabled:opacity-40"
       }
     >
       {children}

@@ -145,7 +145,7 @@ export type IdeaDraft = z.infer<typeof IdeaDraftSchema>;
  */
 export const IdeaSchema = IdeaDraftSchema.extend({
   id: z.string(),
-  source: z.enum(["corpus", "ollama"]),
+  source: z.enum(["corpus", "ollama", "zai"]),
   createdAt: z.string(),
   // telemetry — the report's per-generation record
   provider: z.string().optional(),
@@ -166,11 +166,8 @@ export type Idea = z.infer<typeof IdeaSchema>;
  * `$schema` is stripped: Ollama's grammar compiler does not want it.
  */
 export function ideaJsonSchema(): Record<string, unknown> {
-  const derived = z.toJSONSchema(IdeaDraftSchema, { target: "draft-7" }) as Record<
-    string,
-    unknown
-  >;
-  delete derived["$schema"];
+  const derived = z.toJSONSchema(IdeaDraftSchema, { target: "draft-7" }) as Record<string, unknown>;
+  delete derived.$schema;
   return derived;
 }
 
@@ -183,6 +180,10 @@ export const GenerateRequestSchema = z.object({
   temperature: z.number().min(0.1).max(1.4).default(0.95),
   /** Seeds the model with these titles so it can riff rather than restart. */
   seedFrom: z.array(phrase).max(3).optional(),
+  /** Free text from the painter. Steers the curated ranking and the model. */
+  brief: z.string().trim().max(500).optional(),
+  /** Language of newly written card prose. Authored corpus cards keep their own. */
+  language: z.enum(["en", "nl"]).optional(),
   /** Draw one of these exactly. Forces the deterministic path. */
   curatedOnly: z.boolean().default(false),
 });

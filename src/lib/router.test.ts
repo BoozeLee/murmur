@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { IdeaDraftSchema } from "./schema";
-import type { Idea } from "./schema";
-import { POLICIES, expandIdea, run, setProvider } from "./router";
 import type { GenerateContext, IdeaProvider, ProviderOutcome } from "./providers/types";
+import { expandIdea, POLICIES, run, setProvider } from "./router";
+import type { Idea } from "./schema";
+import { IdeaDraftSchema } from "./schema";
 
 /**
  * The routing table is the product's promise that the deck and the deepener can
@@ -25,11 +25,7 @@ const draft = IdeaDraftSchema.parse({
     "Paint two overlapping rings on a dark board, place them slightly left of centre, and light the left rim with a single low lamp so the copper reads warm against bone.",
 });
 
-function stubProvider(
-  name: string,
-  outcome: ProviderOutcome,
-  calls: string[],
-): IdeaProvider {
+function stubProvider(name: string, outcome: ProviderOutcome, calls: string[]): IdeaProvider {
   return {
     name,
     generate: async (context: GenerateContext) => {
@@ -144,9 +140,7 @@ describe("run", () => {
     const calls: string[] = [];
     setProvider("llamacpp", stubProvider("llamacpp", okOutcome("glm-creative"), calls));
     await expect(run("deck.draw", { count: 99 }, [], [])).rejects.toThrow(/count/);
-    await expect(run("deck.draw", { category: "sculpture" }, [], [])).rejects.toThrow(
-      /category: /,
-    );
+    await expect(run("deck.draw", { category: "sculpture" }, [], [])).rejects.toThrow(/category: /);
     expect(calls).toEqual([]);
   });
 

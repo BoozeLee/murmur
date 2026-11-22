@@ -24,7 +24,11 @@ const PROSE_FIELDS = ["concept", "tension", "light", "composition", "medium", "p
  * long enough that no hand-written card trips it.
  */
 function repeatedClause(text: string, words = 5, limit = 3): string | null {
-  const tokens = text.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
   if (tokens.length < words * limit) return null;
   const seen = new Map<string, number>();
   for (let i = 0; i + words <= tokens.length; i += 1) {

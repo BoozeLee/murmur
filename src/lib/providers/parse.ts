@@ -1,6 +1,6 @@
 import { qualityIssues } from "../quality";
-import { IdeaDraftSchema } from "../schema";
 import type { IdeaDraft } from "../schema";
+import { IdeaDraftSchema } from "../schema";
 
 /**
  * The one place model output becomes an IdeaDraft.

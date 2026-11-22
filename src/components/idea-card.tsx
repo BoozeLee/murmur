@@ -1,28 +1,41 @@
+import { Bookmark, BookmarkCheck, Layers2, Palette, Sparkles, WandSparkles, X } from "lucide-react";
+
+import { useI18n } from "@/components/locale-provider";
 import type { Idea } from "@/lib/schema";
-import { CATEGORY_LABELS } from "@/lib/schema";
+
+const PIGMENTS = [
+  "#5E512C",
+  "#5F654D",
+  "#47391E",
+  "#8F6F2C",
+  "#2D5A50",
+  "#314534",
+  "#A18D5A",
+] as const;
+
+/** Same word always gets the same sampled pigment, without storing a mapping. */
+function pigmentFor(value: string): string {
+  let hash = 0;
+  for (const char of value.toLowerCase()) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return PIGMENTS[Math.abs(hash) % PIGMENTS.length] ?? PIGMENTS[0];
+}
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[6.5rem_1fr] gap-3 sm:grid-cols-[8rem_1fr]">
-      <dt className="pt-0.5 text-[0.65rem] uppercase tracking-[0.18em] text-mist-400/70">
-        {label}
-      </dt>
-      <dd className="text-sm leading-relaxed text-mist-200/90">{children}</dd>
+    <div className="grid grid-cols-[6.5rem_1fr] gap-3 sm:grid-cols-[8.5rem_1fr]">
+      <dt className="label-caps pt-1">{label}</dt>
+      <dd className="text-sm leading-relaxed text-parchment/85">{children}</dd>
     </div>
   );
 }
 
-function Chips({ items, tone = "quiet" }: { items: readonly string[]; tone?: "quiet" | "accent" }) {
+function Chips({ items }: { items: readonly string[] }): React.ReactElement {
   return (
     <ul className="flex flex-wrap gap-1.5">
       {items.map((item) => (
         <li
           key={item}
-          className={
-            tone === "accent"
-              ? "rounded-full border border-phosphor/25 bg-phosphor/10 px-2 py-0.5 text-[0.7rem] text-phosphor"
-              : "rounded-full border border-ink-500 bg-ink-800 px-2 py-0.5 text-[0.7rem] text-mist-400"
-          }
+          className="rounded-full border border-sage/35 bg-canvas/50 px-2 py-0.5 text-[0.7rem] text-sand/85"
         >
           {item}
         </li>
@@ -31,10 +44,29 @@ function Chips({ items, tone = "quiet" }: { items: readonly string[]; tone?: "qu
   );
 }
 
+function PigmentChips({ items }: { items: readonly string[] }): React.ReactElement {
+  return (
+    <ul className="flex flex-wrap gap-2">
+      {items.map((item) => (
+        <li
+          key={item}
+          className="flex items-center gap-2 rounded-full border border-sage/30 bg-canvas/45 py-0.5 pl-0.5 pr-2.5 text-[0.72rem] text-parchment/90"
+        >
+          <span
+            aria-hidden
+            className="h-4 w-4 rounded-full ring-1 ring-parchment/15"
+            style={{ backgroundColor: pigmentFor(item) }}
+          />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
- * One painting idea. The field order is the order a painter actually needs them:
- * what, then the problem that makes it worth doing, then the decisions, then the
- * one-liner to read from the easel.
+ * One painting idea, laid out in the order a painter needs it: what, the problem
+ * worth solving, the decisions, then the line to read from the easel.
  */
 export function IdeaCard({
   idea,
@@ -52,38 +84,52 @@ export function IdeaCard({
   /** `true` asks the model; absent fuses with a corpus partner, which is instant. */
   onExpand: (idea: Idea, viaModel: boolean) => void;
 }): React.ReactElement {
+  const { t, categoryLabel } = useI18n();
   return (
-    <article className="rounded-2xl border border-ink-600 bg-ink-800/80 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_20px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-sm">
-      <header className="border-b border-ink-700 px-5 py-4 sm:px-7">
-        <p className="text-[0.65rem] uppercase tracking-[0.22em] text-mist-400/70">
-          {CATEGORY_LABELS[idea.category]}
-        </p>
-        <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl leading-tight text-mist-200 sm:text-3xl">
-          {idea.title}
-        </h2>
-        <div className="mt-3">
+    <article className="studio-panel relative overflow-hidden rounded-[1.75rem]">
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[3px] bg-[linear-gradient(90deg,var(--color-sage),var(--color-ochre)_45%,var(--color-teal)_80%,transparent)]"
+      />
+
+      <header className="relative border-b border-sage/25 px-5 pb-5 pt-7 sm:px-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="label-caps">{categoryLabel(idea.category)}</p>
+            <h2 className="type-display mt-2 text-3xl leading-[1.08] text-parchment sm:text-4xl">
+              {idea.title}
+            </h2>
+          </div>
+          <div
+            aria-hidden
+            className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ochre/40 bg-ochre/10 text-ochre"
+          >
+            <Palette className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="mt-4">
           <Chips items={idea.tags} />
         </div>
       </header>
 
-      <dl className="space-y-3 px-5 py-5 sm:px-7">
-        <Row label="The idea">{idea.concept}</Row>
-        <Row label="The problem">
-          <span className="text-mist-200">{idea.tension}</span>
+      <dl className="space-y-3.5 px-5 py-6 sm:px-8">
+        <Row label={t("theIdea")}>{idea.concept}</Row>
+        <Row label={t("theProblem")}>
+          <span className="text-parchment">{idea.tension}</span>
         </Row>
-        <Row label="Light">{idea.light}</Row>
-        <Row label="Palette">
-          <Chips items={idea.palette} tone="accent" />
+        <Row label={t("light")}>{idea.light}</Row>
+        <Row label={t("palette")}>
+          <PigmentChips items={idea.palette} />
         </Row>
-        <Row label="Composition">{idea.composition}</Row>
-        <Row label="Medium">
+        <Row label={t("composition")}>{idea.composition}</Row>
+        <Row label={t("medium")}>
           {idea.medium}
-          {idea.scale ? <span className="text-mist-400"> — {idea.scale}</span> : null}
+          {idea.scale ? <span className="text-sand/70"> — {idea.scale}</span> : null}
         </Row>
-        {idea.referenceAngle ? <Row label="Go look at">{idea.referenceAngle}</Row> : null}
+        {idea.referenceAngle ? <Row label={t("goLookAt")}>{idea.referenceAngle}</Row> : null}
         {idea.pitfalls && idea.pitfalls.length > 0 ? (
-          <Row label="Where it fails">
-            <ul className="list-disc space-y-1 pl-4">
+          <Row label={t("whereItFails")}>
+            <ul className="list-disc space-y-1 pl-4 text-sand/80">
               {idea.pitfalls.map((pitfall) => (
                 <li key={pitfall}>{pitfall}</li>
               ))}
@@ -92,52 +138,63 @@ export function IdeaCard({
         ) : null}
       </dl>
 
-      <div className="border-t border-ink-700 px-5 py-4 sm:px-7">
-        <p className="text-[0.65rem] uppercase tracking-[0.22em] text-mist-400/70">At the easel</p>
-        <p className="mt-1.5 font-[family-name:var(--font-display)] text-lg leading-snug text-phosphor/95">
+      <div className="relative border-t border-sage/25 bg-[linear-gradient(110deg,var(--color-teal),transparent_58%)] px-5 py-5 sm:px-8">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-glow" aria-hidden />
+          <p className="label-caps">{t("atTheEasel")}</p>
+        </div>
+        <p className="type-display mt-2 text-xl leading-snug text-parchment sm:text-2xl">
           {idea.prompt}
         </p>
+        <div aria-hidden className="rule-brush mt-4 max-w-xs opacity-70" />
       </div>
 
-      <footer className="flex flex-wrap items-center gap-2 border-t border-ink-700 px-5 py-4 sm:px-7">
+      <footer className="flex flex-wrap items-center gap-2 border-t border-sage/25 px-5 py-4 sm:px-8">
         <button
           type="button"
           onClick={() => onSave(idea)}
           disabled={busy}
-          className="rounded-lg border border-phosphor/30 bg-phosphor/10 px-3 py-1.5 text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-40"
+          className="button-primary disabled:opacity-40"
         >
-          {saved ? "Kept" : "Keep this"}
+          {saved ? (
+            <BookmarkCheck className="h-4 w-4" aria-hidden />
+          ) : (
+            <Bookmark className="h-4 w-4" aria-hidden />
+          )}
+          {saved ? t("kept") : t("keepThis")}
         </button>
         <button
           type="button"
           onClick={() => onExpand(idea, false)}
           disabled={busy}
-          className="rounded-lg border border-phosphor/30 bg-phosphor/10 px-3 py-1.5 text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-40"
+          className="button-quiet border-ochre/40 disabled:opacity-40"
         >
-          Take it further
-          <span className="ml-1.5 text-xs text-mist-400/70">instant</span>
+          <Layers2 className="h-4 w-4 text-sand" aria-hidden />
+          {t("takeFurther")}
+          <span className="text-xs text-sand/60">{t("instant")}</span>
         </button>
         <button
           type="button"
           onClick={() => onExpand(idea, true)}
           disabled={busy}
-          className="rounded-lg border border-ink-500 px-3 py-1.5 text-sm text-mist-200 transition hover:border-ink-500 hover:bg-ink-700 disabled:opacity-40"
+          className="button-quiet disabled:opacity-40"
         >
-          Further, by the model
-          <span className="ml-1.5 text-xs text-mist-400/70">about a minute</span>
+          <WandSparkles className="h-4 w-4 text-glow" aria-hidden />
+          {t("byModel")}
+          <span className="text-xs text-sand/60">{t("aboutAMinute")}</span>
         </button>
         <button
           type="button"
           onClick={() => onDismiss(idea)}
           disabled={busy}
-          className="rounded-lg px-3 py-1.5 text-sm text-mist-400 transition hover:text-ember disabled:opacity-40"
+          className="button-ghost disabled:opacity-40"
         >
-          Not this one
+          <X className="h-4 w-4" aria-hidden />
+          {t("notThisOne")}
         </button>
-        <span className="ml-auto text-[0.7rem] text-mist-400/60">
-          {/* Keyed on `provider`, not `source`: `source` says which pool a card
-              belongs to, and llama.cpp cards live in the corpus pool, so a
-              `source` check would label a card the MoE just wrote as "curated". */}
+        <span className="ml-auto text-[0.7rem] text-sand/55">
+          {/* Keyed on `provider`, not `source`: a llama.cpp card still belongs to
+              the corpus pool, so `source` would mislabel a model-written card. */}
           {idea.provider ? (idea.model ?? idea.provider) : "curated"}
           {idea.latencyMs ? ` · ${(idea.latencyMs / 1000).toFixed(1)}s` : ""}
           {idea.fallbackUsed ? " · fell back" : ""}

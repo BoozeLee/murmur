@@ -73,7 +73,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A sunken iron cathedral. Sunlight through its rose window is the only living thing left.",
     scale: "Cathedral on a seabed; the beam spans the whole width.",
-    referenceAngle: "Photograph a real rusted iron sheet under water if you can get near any water.",
+    referenceAngle:
+      "Photograph a real rusted iron sheet under water if you can get near any water.",
     pitfalls: ["Beam too neat — it needs the mess of floating particles."],
   },
   {
@@ -84,8 +85,7 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "A technical drawing of an impossible building, left on the drafting table so long the ink has bled, faded and started growing its own faint secondary lines — a second design nobody drew.",
     tension:
       "The second set of lines must look like a consequence of the first, not a doodle. Same geometry, wrong proportion.",
-    light:
-      "Flat, raking side-light across the paper so the bleed and the paper texture both read.",
+    light: "Flat, raking side-light across the paper so the bleed and the paper texture both read.",
     palette: ["prussian blue", "paper cream", "oxblood correction marks", "graphite silver"],
     composition: "Flat overhead, the sheet filling frame, edges of the table just visible.",
     medium: "Ink and coloured pencil on rag paper",
@@ -111,7 +111,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A broken engine component arranged on velvet like a relic. Brass, heptagon of screws, candlelight.",
     scale: "Small objects, vast empty cloth.",
-    referenceAngle: "Old-master still-life lighting references; the falloff into black is the trick.",
+    referenceAngle:
+      "Old-master still-life lighting references; the falloff into black is the trick.",
     pitfalls: ["Too many objects. Restraint is what makes it an altar."],
   },
   {
@@ -126,10 +127,10 @@ export const SEED_IDEAS: IdeaDraft[] = [
     palette: ["old paper", "walnut", "dust gold", "green-shadowed dark"],
     composition: "Low angle, looking up the shelves so the scale keeps climbing out of frame.",
     medium: "Acrylic, layered, soft edges",
-    prompt:
-      "A library scaled for a being fifteen feet tall. Nobody is here. The books are huge.",
+    prompt: "A library scaled for a being fifteen feet tall. Nobody is here. The books are huge.",
     scale: "Vaulted, endless, built for giants.",
-    referenceAngle: "Measure a familiar bookshelf against your own reach to internalise the mismatch.",
+    referenceAngle:
+      "Measure a familiar bookshelf against your own reach to internalise the mismatch.",
     pitfalls: ["Showing a person for scale destroys the illusion instantly."],
   },
 
@@ -143,13 +144,19 @@ export const SEED_IDEAS: IdeaDraft[] = [
     tension:
       "The drawing must be good enough that the viewer feels the loss. Mediocre linework turns the void into indifference instead of regret.",
     light: "Neutral, even, museum-flat — this is a work on paper, not a scene.",
-    palette: ["graphite", "paper white", "one accent of vermilion", "the empty rectangle as pure white"],
+    palette: [
+      "graphite",
+      "paper white",
+      "one accent of vermilion",
+      "the empty rectangle as pure white",
+    ],
     composition: "Drawing on the left third, empty rectangle dominating the right two-thirds.",
     medium: "Graphite and coloured pencil on paper",
     prompt:
       "A perfect design drawing beside the blank space where it should have been. The absence is the subject.",
     scale: "Two sheets on a table.",
-    referenceAngle: "Look at how much empty margin Japanese designers leave — the void is designed too.",
+    referenceAngle:
+      "Look at how much empty margin Japanese designers leave — the void is designed too.",
     pitfalls: ["Filling the empty rectangle, even with a pale wash."],
   },
   {
@@ -162,12 +169,13 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "The organic forms must still snap to the grid's rhythm at their edges. Total escape looks like a different painting.",
     light: "Flat and even; let the drawing carry it.",
     palette: ["ink black", "paper", "one green", "the green is too saturated on purpose"],
-    composition: "Full-bleed grid, the mutations clustered off-centre following an invisible diagonal.",
+    composition:
+      "Full-bleed grid, the mutations clustered off-centre following an invisible diagonal.",
     medium: "Ink and gouache on paper",
-    prompt:
-      "A modular grid being quietly outgrown by organic forms that still obey its rhythm.",
+    prompt: "A modular grid being quietly outgrown by organic forms that still obey its rhythm.",
     scale: "Single sheet.",
-    referenceAngle: "Study Islamic geometric tiling for the underlying lattice beneath the pattern.",
+    referenceAngle:
+      "Study Islamic geometric tiling for the underlying lattice beneath the pattern.",
     pitfalls: ["Organic forms drifting off the lattice entirely."],
   },
   {
@@ -178,7 +186,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "A screen-printed poster for an event no one can confirm exists. Confident typography, immaculate grid, one impossible image. It looks like an announcement of nothing.",
     tension:
       "It has to look professionally credible. Sloppiness would make it obviously fictional; the unsettling read only comes from polish.",
-    light: "Printed — flat colour, no modelled light at all, except inside the one impossible image.",
+    light:
+      "Printed — flat colour, no modelled light at all, except inside the one impossible image.",
     palette: ["2 inks only: orange and black", "paper cream", "the orange used sparingly"],
     composition: "Classical poster grid — image top two-thirds, type block bottom third.",
     medium: "Screenprint simulation — flat layers, slight misregistration",
@@ -198,7 +207,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "The letters must suggest meaning without resolving into any real script. Too familiar and it becomes a font; too abstract and the care is lost.",
     light: "Even specimen-sheet lighting. Flat.",
     palette: ["black ink", "cream stock", "a single registration-red accent"],
-    composition: "Traditional specimen layout — giant character, then the character set, then a water-fall row.",
+    composition:
+      "Traditional specimen layout — giant character, then the character set, then a water-fall row.",
     medium: "Digital or ink, precise, no brush character",
     prompt:
       "A type specimen sheet for a script with no speakers. Every glyph kerned by hand. Obsessive care.",
@@ -259,7 +269,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A structure in the millisecond before buckling. One strut bent past its limit. Everything still holding.",
     scale: "Close enough to see the bend clearly.",
-    referenceAngle: "Slow-motion footage of buckling tests — the shape before failure is the whole subject.",
+    referenceAngle:
+      "Slow-motion footage of buckling tests — the shape before failure is the whole subject.",
     pitfalls: ["Drawing the failure. Draw the instant before."],
   },
   {
@@ -314,7 +325,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A real structural triangulation diagram rendered as a mandala. Valid physics, esoteric reading.",
     scale: "One sheet.",
-    referenceAngle: "Look up how a truss is actually drawn — the triangulation is already beautiful.",
+    referenceAngle:
+      "Look up how a truss is actually drawn — the triangulation is already beautiful.",
     pitfalls: ["Loosening the joints so it reads as art, not engineering."],
   },
 
@@ -388,7 +400,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A blueprint lying on the ground, grass growing up through it. Partly readable. The building becoming a meadow.",
     scale: "Ground plane, life-size.",
-    referenceAngle: "Real photographs of paper degrading outdoors; the partial states are the good ones.",
+    referenceAngle:
+      "Real photographs of paper degrading outdoors; the partial states are the good ones.",
     pitfalls: ["Dissolving the whole sheet."],
   },
   {
@@ -406,7 +419,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "Nine panels of a machine failing the same motion eight times, then succeeding clumsily in the ninth.",
     scale: "Nine equal frames.",
-    referenceAngle: " Muybridge and Marey chronophotography — identical fixed camera, that's the tradition.",
+    referenceAngle:
+      " Muybridge and Marey chronophotography — identical fixed camera, that's the tradition.",
     pitfalls: ["Making panel nine elegant."],
   },
   {
@@ -437,8 +451,14 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "A humanoid machine seated alone, its cranial casing open, light inside where a brain would be. Its hands are open in its lap. It is not performing anything. It is remembering.",
     tension:
       "It must read as interior and private, not as a robot on display. No stance, no gesture towards the viewer.",
-    light: "The only light source is inside its open head, lighting its own face and hands from below.",
-    palette: ["black interior", "cold machine grey", "warm internal glow", "deep blue-black shadow"],
+    light:
+      "The only light source is inside its open head, lighting its own face and hands from below.",
+    palette: [
+      "black interior",
+      "cold machine grey",
+      "warm internal glow",
+      "deep blue-black shadow",
+    ],
     composition: "Seated figure, low, centred, generous empty space above the head.",
     medium: "Oil on canvas, dark ground, single light source",
     prompt:
@@ -456,7 +476,12 @@ export const SEED_IDEAS: IdeaDraft[] = [
     tension:
       "Do not draw circuit traces. The moment it becomes electronics it stops being alive; the botanical reading has to survive.",
     light: "Subsurface glow from the nodes, dark soil above.",
-    palette: ["soil black", "bioluminescent cyan-green", "root ochre", "faint blue sky at the very top"],
+    palette: [
+      "soil black",
+      "bioluminescent cyan-green",
+      "root ochre",
+      "faint blue sky at the very top",
+    ],
     composition: "Cross-section, horizon high in frame, roots filling the lower two-thirds.",
     medium: "Gouache, glazing, wet-in-wet glow",
     prompt:
@@ -474,7 +499,11 @@ export const SEED_IDEAS: IdeaDraft[] = [
     tension:
       "The third form must be *incomplete*, as if the act of looking at each other is only halfway through building it.",
     light: "Each face lit from the other; the shared form lit from behind both.",
-    palette: ["two skin tones in shadow", "the third form in cold luminous white", "deep neutral ground"],
+    palette: [
+      "two skin tones in shadow",
+      "the third form in cold luminous white",
+      "deep neutral ground",
+    ],
     composition: "Two profiles, symmetrical, the shared form on the vertical axis.",
     medium: "Oil, soft modelling, one hard accent",
     prompt:
@@ -527,14 +556,16 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "A polished machine face, featureless and mirror-finished, and its reflection shows a face that is not mechanical at all. The machine is looking at itself and seeing something else.",
     tension:
       "The reflection must be soft enough to be arguable. Too clear and it states its own punchline.",
-    light: "A single soft light for the reflection; the machine's own surface is pure reflected environment.",
+    light:
+      "A single soft light for the reflection; the machine's own surface is pure reflected environment.",
     palette: ["chrome greys", "warm reflected environment", "one warm note in the reflection only"],
     composition: "Face frontally, reflection slightly off-axis so both are visible.",
     medium: "Airbrush-style glazing, extremely smooth value transitions",
     prompt:
       "A polished featureless machine face. Its reflection shows a face that is not mechanical. It does not recognise itself.",
     scale: "Head-sized, close.",
-    referenceAngle: "Chrome reflection photography; you will need a real reflective surface to work from.",
+    referenceAngle:
+      "Chrome reflection photography; you will need a real reflective surface to work from.",
     pitfalls: ["Reflection too legible."],
   },
 
@@ -591,7 +622,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A machine growing its next part, brass but branching, emerging like a bone across a gap. Machined surfaces, organic logic.",
     scale: "Held in two hands.",
-    referenceAngle: "Study how a limb bone's growth plate looks; that is the reference, not a machine part.",
+    referenceAngle:
+      "Study how a limb bone's growth plate looks; that is the reference, not a machine part.",
     pitfalls: ["Dropping the tool marks and becoming a plant."],
   },
   {
@@ -602,7 +634,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "An interior of a hall filled with a grid of vertical pistons, each at a different height, all frozen mid-stroke. It reads as a forest of columns, or a city seen from below.",
     tension:
       "Keep every piston visibly *identical*. One that differs turns the room into an object study instead of a space.",
-    light: "Even top light through a high opening, raking enough to throw a shadow from each piston.",
+    light:
+      "Even top light through a high opening, raking enough to throw a shadow from each piston.",
     palette: ["oiled steel greys", "soot", "one shaft of warm light", "cold overall"],
     composition: "One-point perspective, grid receding, top light repeating.",
     medium: "Acrylic, layered greys, hard-edged shadow",
@@ -620,7 +653,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "A single large coil spring, and inside the coil, wound inside it, is a complete landscape — a horizon, weather, distance. Coiled up and stored. The whole world under tension.",
     tension:
       "The inner landscape must be genuinely miniature and genuinely complete, so unwinding it feels like a promise rather than a trick.",
-    light: "Single warm source grazing the coil so the inner scene alternates in and out of visibility.",
+    light:
+      "Single warm source grazing the coil so the inner scene alternates in and out of visibility.",
     palette: ["steel", "inner landscape in full colour", "warm raking light"],
     composition: "Extreme close-up, coil filling frame, landscape visible in the gaps.",
     medium: "Oil, very fine detail in the inner scene, loose on the steel",
@@ -659,11 +693,13 @@ export const SEED_IDEAS: IdeaDraft[] = [
     light: "Hard rim highlight; the blurred interior picks up ambient colour from the room.",
     palette: ["rim highlight", "motion-blur disc in a contrasting hue", "dark surround"],
     composition: "Dead-centre disc, filling frame, no context.",
-    medium: "Airbrush-style soft gradient with a hard rim, or painted from a long-exposure reference",
+    medium:
+      "Airbrush-style soft gradient with a hard rim, or painted from a long-exposure reference",
     prompt:
       "A flywheel photographed so the rim is sharp and the spokes dissolve into a disc. Speed made visible as blur.",
     scale: "Close-up.",
-    referenceAngle: "Photograph a spinning wheel with a slow shutter on a tripod — do it, it's easy.",
+    referenceAngle:
+      "Photograph a spinning wheel with a slow shutter on a tripod — do it, it's easy.",
     pitfalls: ["Spokes too visible."],
   },
   {
@@ -792,7 +828,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A data centre overgrown with bioluminescent fungus tracing the cabling. Building and mycelium as one system.",
     scale: "Aisle-sized, deep.",
-    referenceAngle: "Server-aisle photos for perspective; fungal bioluminescence photos for the glow behaviour.",
+    referenceAngle:
+      "Server-aisle photos for perspective; fungal bioluminescence photos for the glow behaviour.",
     pitfalls: ["Fungus not following the cable routes."],
   },
   {
@@ -828,7 +865,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "An architectural drawing where the structure spells something. Load-bearing walls are the letters that can carry weight.",
     scale: "One elevation.",
-    referenceAngle: "Structural lettering on real shop drawings; the load-bearing letters need real spans.",
+    referenceAngle:
+      "Structural lettering on real shop drawings; the load-bearing letters need real spans.",
     pitfalls: ["Cheating the structural logic to fit the sentence."],
   },
   {
@@ -864,7 +902,8 @@ export const SEED_IDEAS: IdeaDraft[] = [
     prompt:
       "A retired designer's worn tools in one row. The wear pattern makes a portrait of their hands.",
     scale: "30cm across.",
-    referenceAngle: "Photograph your own tools for honest wear patterns — nobody should guess where a hand goes.",
+    referenceAngle:
+      "Photograph your own tools for honest wear patterns — nobody should guess where a hand goes.",
     pitfalls: ["Uniform wear. Real wear is uneven and hand-specific."],
   },
   {
@@ -895,7 +934,12 @@ export const SEED_IDEAS: IdeaDraft[] = [
       "Only one or two rooms may be legible as specific places. Three and it becomes a list; two reads as memory, which is how memory actually works.",
     light:
       "Each room lit by its own remembered light — different colour temperature per room, no global source.",
-    palette: ["warm kitchen ochre", "school-institutional green", "cold unnamed grey", "dark connecting stair"],
+    palette: [
+      "warm kitchen ochre",
+      "school-institutional green",
+      "cold unnamed grey",
+      "dark connecting stair",
+    ],
     composition:
       "One-point interior view through three rooms, each a different era of light, stair rising out of frame.",
     medium: "Acrylic, atmospheric, interior perspective",
