@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 /**
  * Murmur as a living surface.
@@ -41,6 +41,7 @@ const MOTE_COLOURS = ["#a18d5a", "#d8c9a3", "#8f6f2c", "#79b2a3"];
 export function LivingMurmur(): React.ReactElement {
   const uid = useId().replace(/:/g, "");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [awakened, setAwakened] = useState(false);
 
   const geometry = useMemo(() => {
     const rand = mulberry32(SEED);
@@ -67,6 +68,21 @@ export function LivingMurmur(): React.ReactElement {
       colour: MOTE_COLOURS[Math.floor(rand() * MOTE_COLOURS.length)] ?? "#a18d5a",
     }));
     return { spray, arches, motes };
+  }, []);
+
+  useEffect(() => {
+    let resting: ReturnType<typeof setTimeout> | undefined;
+    function awaken(): void {
+      setAwakened(false);
+      requestAnimationFrame(() => setAwakened(true));
+      if (resting !== undefined) clearTimeout(resting);
+      resting = setTimeout(() => setAwakened(false), 1800);
+    }
+    window.addEventListener("murmur:awaken", awaken);
+    return () => {
+      window.removeEventListener("murmur:awaken", awaken);
+      if (resting !== undefined) clearTimeout(resting);
+    };
   }, []);
 
   useEffect(() => {
@@ -156,8 +172,11 @@ export function LivingMurmur(): React.ReactElement {
   return (
     <div
       aria-hidden="true"
-      className="living-murmur pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className={`living-murmur pointer-events-none fixed inset-0 z-0 overflow-hidden${awakened ? " is-awake" : ""}`}
     >
+      {/* The generated mural establishes the painted ground; later layers stay light and legible. */}
+      <div className="living-hero-art absolute inset-0" />
+
       {/* Traced brush stroke, vectorised from a hand-wobbled mask with potrace. */}
       <div className="living-scrawl absolute -left-24 top-[7%] h-[42vh] w-[135vw] bg-no-repeat" />
 

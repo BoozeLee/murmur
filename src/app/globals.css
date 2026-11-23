@@ -406,6 +406,17 @@
   contain: layout paint;
 }
 
+.living-hero-art {
+  background-image:
+    linear-gradient(180deg, rgb(28 29 20 / 0.12), rgb(28 29 20 / 0.42)),
+    url("/art/murmur-hero-backdrop-v1.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(0.82) contrast(0.92);
+  opacity: 0.62;
+}
+
 .living-scrawl {
   background-image: url("/art/murmur-scrawl.svg");
   background-size: contain;
@@ -523,6 +534,112 @@
     radial-gradient(70rem 40rem at 50% 0%, transparent 30%, rgb(35 36 25 / 0.18) 100%);
 }
 
+/* The scene answers a deliberate request, then returns to its slower ambient life. */
+.living-murmur.is-awake .living-doorway {
+  animation: doorway-answer 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.living-murmur.is-awake .living-ring {
+  animation: ring-answer 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.living-murmur.is-awake .living-glow {
+  animation: glow-answer 1.8s ease-out both;
+}
+
+.living-murmur.is-awake .living-spray {
+  animation: mote-answer 1.8s ease-out both;
+}
+
+@keyframes doorway-answer {
+  0% {
+    opacity: 0.55;
+    transform: scaleY(0.985);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1.075, 1.13);
+  }
+  100% {
+    opacity: 0.72;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes ring-answer {
+  0% {
+    opacity: 0.65;
+    transform: rotate(0) scale(1);
+  }
+  55% {
+    opacity: 1;
+    transform: rotate(72deg) scale(1.2);
+  }
+  100% {
+    opacity: 0.68;
+    transform: rotate(105deg) scale(1);
+  }
+}
+
+@keyframes glow-answer {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  42% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 0.48;
+    transform: scale(1);
+  }
+}
+
+@keyframes mote-answer {
+  0% {
+    opacity: 0.16;
+    transform: scale(0.8);
+  }
+  35% {
+    opacity: 0.9;
+    transform: scale(1.8);
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+}
+
+/* The UI reads as a set of painted labels pinned into the scene, not detached cards. */
+.murmur-stage > header {
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--color-sage) 28%, transparent);
+  padding: 1.25rem;
+  background: linear-gradient(105deg, rgb(35 36 25 / 0.72), rgb(43 43 32 / 0.28));
+  box-shadow: inset 0 1px 0 rgb(216 201 163 / 0.07);
+  backdrop-filter: blur(8px);
+}
+
+.murmur-stage .studio-panel,
+.murmur-stage .studio-panel-soft {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.murmur-stage .studio-panel::before,
+.murmur-stage .studio-panel-soft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.75;
+  background:
+    linear-gradient(123deg, transparent 18%, rgb(121 178 163 / 0.05) 46%, transparent 68%),
+    repeating-linear-gradient(87deg, transparent 0 7px, rgb(216 201 163 / 0.018) 8px 9px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .living-murmur canvas {
     display: none;
@@ -538,6 +655,7 @@
   .living-drip {
     animation: none !important;
   }
+
   .living-arch,
   .living-filigree,
   .living-drip {
@@ -547,5 +665,11 @@
   .living-glow,
   .living-leaves {
     opacity: 0.5;
+  }
+  .living-murmur.is-awake .living-doorway,
+  .living-murmur.is-awake .living-ring,
+  .living-murmur.is-awake .living-glow,
+  .living-murmur.is-awake .living-spray {
+    animation: none !important;
   }
 }

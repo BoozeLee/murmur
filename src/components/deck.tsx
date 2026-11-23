@@ -41,6 +41,11 @@ interface AnalyzeResponse extends DrawResponse {
 
 const EMPTY_FILTER: DeckFilter = { tags: [] };
 
+/** The backdrop acknowledges an intentional draw without becoming a loading spinner. */
+function wakeArtwork(): void {
+  window.dispatchEvent(new Event("murmur:awaken"));
+}
+
 const LEGEND = [
   ["#232419", "canvas"],
   ["#5E512C", "olive"],
@@ -131,6 +136,7 @@ export function Deck({
     async (from?: boolean, withBrief?: string) => {
       const curated = from ?? curatedOnly;
       const words = withBrief ?? brief;
+      wakeArtwork();
       setStatus("drawing");
       setError(null);
       setNote(null);
@@ -166,6 +172,7 @@ export function Deck({
     image: string,
     words: string,
   ): Promise<void> {
+    wakeArtwork();
     setStatus("analyzing");
     setError(null);
     setNote(null);
@@ -218,6 +225,7 @@ export function Deck({
   }
 
   async function expand(idea: Idea, viaModel: boolean): Promise<void> {
+    wakeArtwork();
     setStatus("expanding");
     setError(null);
     setNote(null);
@@ -261,7 +269,7 @@ export function Deck({
   ];
 
   return (
-    <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="murmur-stage relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-5 border-b border-sage/25 pb-6">
         <div className="flex items-start gap-4">
           <BrandMark className="mt-0.5 h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
